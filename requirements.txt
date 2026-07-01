@@ -1,0 +1,6 @@
+pytesseract
+Pillow
+pdfplumber
+speechrecognition
+pyaudio
+kivy

@@ -1,3 +1,18 @@
+# OCR-STT Tool
+
+[![Stars](https://img.shields.io/github/stars/Alvandcode/ocr-stt-tool?style=flat-square)](https://github.com/Alvandcode/ocr-stt-tool/stargazers) [![License](https://img.shields.io/github/license/Alvandcode/ocr-stt-tool?style=flat-square)](./LICENSE) [![Last commit](https://img.shields.io/github/last-commit/Alvandcode/ocr-stt-tool?style=flat-square)](https://github.com/Alvandcode/ocr-stt-tool/commits)
+
+> Cross-platform OCR, PDF text extractor and speech-to-text tool in Python (CLI + Kivy GUI, Persian supported).
+
+<div dir="rtl">
+
+## ابزار استخراج متن و تبدیل گفتار
+
+ابزار چندسکویی پایتون برای استخراج متن از عکس و PDF و تبدیل گفتار به نوشتار؛ با رابط خط فرمان و رابط گرافیکی Kivy و پشتیبانی از زبان فارسی.
+
+</div>
+
+---
 
 📘 OCR‑STT Tool
 
@@ -172,3 +187,19 @@ pyinstaller app/cli.py --onefile
 📄 لایسنس
 این پروژه تحت لایسنس MIT منتشر شده است.  
 برای مشاهدهٔ متن کامل، فایل LICENSE را ببینید.
+
+---
+
+## Contributing / مشارکت
+
+- EN: Issues and Pull Requests are welcome. Please see `CONTRIBUTING.md`.
+- FA: برای گزارش مشکل یا پیشنهاد قابلیت جدید، لطفا ایشو یا پول‌ریکوئست ثبت کنید.
+
+## License / لایسنس
+
+MIT — see [LICENSE](./LICENSE).
+
+## Contact / ارتباط
+
+- Telegram: https://t.me/a_c_official
+- Website: https://alvandcode.github.io

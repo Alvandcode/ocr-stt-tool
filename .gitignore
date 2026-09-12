@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+bin/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+*.apk
+*.aab
+*.ipa
+.buildozer/
+ios/
+*.spec.bak

@@ -1,6 +1,6 @@
-pytesseract
-Pillow
-pdfplumber
-speechrecognition
-pyaudio
-kivy
+# Pinned for reproducible installs (desktop default).
+pytesseract==0.3.13
+Pillow==10.4.0
+pdfplumber==0.11.4
+SpeechRecognition==3.10.4
+kivy==2.3.0

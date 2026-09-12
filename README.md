@@ -20,10 +20,10 @@
 
 یک ابزار پایتونی چندسکویی (Cross‑Platform) که قابلیت‌های زیر را در یک پروژه واحد ارائه می‌دهد:
 
-- استخراج متن از تصویر (OCR)  
-- استخراج متن از PDF  
-- تبدیل گفتار به نوشتار (Speech‑to‑Text)  
-- رابط CLI برای استفادهٔ سریع  
+- استخراج متن از تصویر (OCR)
+- استخراج متن از PDF
+- تبدیل گفتار به نوشتار (Speech‑to‑Text)
+- رابط CLI برای استفادهٔ سریع
 - رابط GUI با Kivy برای اجرا روی Windows / macOS / Linux / Android / iOS
 
 این پروژه کاملاً اوپن‌سورس است و برای توسعه‌دهندگان، پژوهشگران، دانشجویان و کاربران عمومی طراحی شده است.
@@ -31,161 +31,183 @@
 ---
 
 ⭐ لطفاً از پروژه حمایت کنید
-اگر این ابزار برای شما مفید بود، لطفاً با زدن دکمهٔ Star ⭐ از پروژه حمایت کنید.  
+اگر این ابزار برای شما مفید بود، لطفاً با زدن دکمهٔ Star ⭐ از پروژه حمایت کنید.
 این کار باعث می‌شود پروژه دیده شود و توسعهٔ آن ادامه پیدا کند.
 
 ---
 
 📢 کانال رسمی تلگرام
-برای دریافت آخرین آپدیت‌ها، نسخه‌های جدید، آموزش‌ها و ابزارهای مرتبط:  
+برای دریافت آخرین آپدیت‌ها، نسخه‌های جدید، آموزش‌ها و ابزارهای مرتبط:
 کانال رسمی: @a_c_official
 
 ---
 
 ✨ ویژگی‌ها
-- پشتیبانی از تصویر، PDF، فایل صوتی  
-- پشتیبانی از زبان‌های مختلف (fa‑IR، en‑US و …)  
+- پشتیبانی از تصویر، PDF، فایل صوتی
+- پشتیبانی از زبان‌های مختلف (fa‑IR، en‑US و …)
 - اجرای مستقیم روی:
-  - Windows  
-  - macOS  
-  - Linux  
-  - Android (با Buildozer)  
-  - iOS (با Xcode + Kivy-iOS)  
-- طراحی ماژولار و قابل توسعه  
-- مناسب برای انتشار در GitHub بدون نیاز به Git لوکال
+  - Windows
+  - macOS
+  - Linux
+  - Android (با Buildozer، با محدودیت OCR — بخش موبایل را ببینید)
+  - iOS (با Xcode + Kivy-iOS، با محدودیت OCR)
+- طراحی ماژولار و قابل توسعه
+- مدیریت خطای مناسب (پیام واضح به‌جای Traceback خام)
 
 ---
 
 📁 ساختار پروژه
-`text
+
+```text
 ocr-stt-tool/
 ├─ app/
 │  ├─ core/
-│  │  ├─ init.py
+│  │  ├─ __init__.py
 │  │  ├─ image_ocr.py
 │  │  ├─ pdf_ocr.py
-│  │  ├─ speechtotext.py
-│  ├─ init.py
+│  │  └─ speech_to_text.py
+│  ├─ __init__.py
+│  ├─ __main__.py
 │  ├─ cli.py
-│  ├─ gui_kivy.py
+│  └─ gui_kivy.py
 ├─ examples/
 │  ├─ sample.png
 │  ├─ sample.pdf
-│  ├─ sample.wav
+│  └─ sample.wav
+├─ tests/
+│  └─ test_smoke.py
 ├─ requirements.txt
+├─ requirements-optional.txt
+├─ pyproject.toml
+├─ buildozer.spec
 ├─ README.md
-├─ LICENSE
-`
+└─ LICENSE
+```
 
 ---
 
 🔧 نصب و راه‌اندازی
 
 1) نصب وابستگی‌ها
-`bash
+
+```bash
 pip install -r requirements.txt
-`
+```
+
+موارد اختیاری (میکروفون، تبدیل MP3، OCR اسکن-PDF، STT آفلاین):
+
+```bash
+pip install -r requirements-optional.txt
+```
 
 2) نصب Tesseract OCR
-- Windows:  
-  دانلود از سایت رسمی: https://github.com/tesseract-ocr/tesseract (github.com in Bing)  
-- macOS:  
-  `bash
-  brew install tesseract
-  `
-- Linux:  
-  `bash
-  sudo apt install tesseract-ocr
-  `
+
+- Windows:
+  باینری UB-Mannheim را نصب کنید:
+  https://github.com/UB-Mannheim/tesseract/wiki
+  و گزینهٔ زبان فارسی (`fas`) را موقع نصب فعال کنید. سپس `tesseract` باید در PATH باشد.
+- macOS:
+
+```bash
+brew install tesseract tesseract-lang
+```
+
+- Linux:
+
+```bash
+sudo apt install tesseract-ocr tesseract-ocr-fas tesseract-ocr-eng poppler-utils
+```
+
+بررسی:
+
+```bash
+tesseract --version
+tesseract --list-langs
+```
 
 ---
 
 ▶️ اجرای ابزار
 
 اجرای CLI
-`bash
-python -m app.cli image examples/sample.png
+
+```bash
+python -m app.cli image examples/sample.png --ocr-lang eng
 python -m app.cli pdf examples/sample.pdf
+python -m app.cli pdf scan.pdf --ocr-fallback --ocr-lang fas+eng
 python -m app.cli audio examples/sample.wav --lang fa-IR
-`
+python -m app.cli audio speech.wav --lang en-US -o out.txt
+```
 
 اجرای GUI
-`bash
+
+```bash
 python -m app.gui_kivy
-`
+```
+
+در GUI زبان STT و OCR از منوی کشویی انتخاب می‌شود، کار سنگین در Thread پس‌زمینه اجرا می‌شود (UI فریز نمی‌شود) و خطاها داخل خود برنامه نمایش داده می‌شوند.
 
 ---
 
 📱 راهنمای بیلد برای موبایل (Android / iOS)
 
-🟩 Android (Buildozer)
+> محدودیت مهم: `pytesseract` فقط Wrapper است و به باینری `tesseract` نیاز دارد.
+> `python-for-android` و `kivy-ios` به‌صورت پیش‌فرض `tesseract` ندارند، پس OCR عکس
+> روی موبایل بدون Recipe اختصاصی و باندل `fas.traineddata` کار نمی‌کند.
+> استخراج متن PDF (text-layer) واقع‌بینانه‌ترین قابلیت روی موبایل است.
 
-1. نصب Buildozer  
-   `bash
-   pip install buildozer
-   sudo apt install buildozer
-   `
-2. ساخت فایل پیکربندی  
-   `bash
-   buildozer init
-   `
-3. بیلد APK  
-   `bash
-   buildozer -v android debug
-   `
+🟩 Android (Buildozer، روی لینوکس)
 
-خروجی در مسیر زیر قرار می‌گیرد:  
-`
-bin/*.apk
-`
+```bash
+pip install buildozer
+sudo apt install openjdk-17-jdk unzip autoconf libtool pkg-config zlib1g-dev \
+  libncurses-dev cmake libffi-dev libssl-dev
+buildozer -v android debug
+```
 
----
+فایل `buildozer.spec` در ریپو موجود است. خروجی: `bin/*.apk`.
+دسترسی اینترنت/حافظه در spec فعال شده (`INTERNET`, `READ_EXTERNAL_STORAGE`).
 
-🟦 iOS (Kivy-iOS + Xcode)
+🟦 iOS (Kivy-iOS + Xcode، روی macOS)
 
-1. نصب Kivy-iOS  
-   `bash
-   pip install kivy-ios
-   `
-2. ساخت پروژه iOS  
-   `bash
-   toolchain create ocrstt ios
-   `
-3. بیلد  
-   `bash
-   toolchain build python3 kivy
-   `
-4. باز کردن پروژه در Xcode  
-   `
-   ios/ocrstt.xcodeproj
-   `
+```bash
+pip install kivy-ios
+toolchain build python3 kivy pillow
+toolchain create ocrstt .
+open ocrstt-ios/ocrstt.xcodeproj
+```
 
-5. بیلد و اجرا روی دستگاه یا شبیه‌ساز
+سپس در Xcode بیلد و اجرا روی دستگاه یا شبیه‌ساز.
 
 ---
 
 🖥️ راهنمای بیلد برای دسکتاپ
 
 Windows / macOS / Linux
-`bash
-pip install pyinstaller
-pyinstaller app/cli.py --onefile
-`
 
-خروجی در پوشهٔ dist/ قرار می‌گیرد.
+```bash
+pip install pyinstaller
+pyinstaller --name ocrstt --paths . --onefile -m app.cli
+```
+
+خروجی در پوشهٔ `dist/` قرار می‌گیرد.
+توجه: باینری `tesseract` جداگانه روی سیستم مقصد لازم است (داخل exe باندل نمی‌شود).
 
 ---
 
 ⚠️ نکات مهم
-- برای STT نیاز به اینترنت دارید (Google Speech API).  
-- برای OCR فارسی باید پکیج زبان فارسی Tesseract نصب شود.  
-- روی موبایل، عملکرد OCR وابسته به قدرت CPU دستگاه است.  
-- اگر قصد توسعه دارید، ساختار ماژولار پروژه امکان افزودن قابلیت‌های جدید را فراهم می‌کند.
+- برای STT آنلاین نیاز به اینترنت دارید (Google Speech API). صوت شما به سرور گوگل ارسال می‌شود — برای فایل حساس رضایت بگیرید. جایگزین آفلاین: `requirements-optional.txt` (Vosk / faster-whisper).
+- برای OCR فارسی باید دیتای زبان فارسی Tesseract نصب شود (`fas`) و `--ocr-lang fas` یا `fas+eng` بدهید.
+- PDF اسکن‌شده لایهٔ متنی ندارد؛ خروجی خالی یعنی اسکن است — با `--ocr-fallback` (نیازمند poppler + tesseract) دوباره تلاش کنید.
+- فرمت صوتی پشتیبانی‌شده: WAV/AIFF/FLAC. برای MP3/OGG/M4A اول با `ffmpeg` به WAV تبدیل کنید.
+- توجه پایتون 3.15: کتابخانه `SpeechRecognition` هنوز با 3.15 ناسازگار است (`aifc` حذف شده). برای STT از پایتون 3.10 تا 3.13 استفاده کنید یا جایگزین آفلاین (Vosk / faster-whisper).
+- روی موبایل، عملکرد OCR وابسته به قدرت CPU دستگاه است.
+- محدودیت حجم پیش‌فرض برای جلوگیری از OOM: عکس ۳۰MB، PDF و صوت ۱۰۰MB.
 
 ---
 
 📄 لایسنس
-این پروژه تحت لایسنس MIT منتشر شده است.  
+این پروژه تحت لایسنس MIT منتشر شده است.
 برای مشاهدهٔ متن کامل، فایل LICENSE را ببینید.
 
 ---

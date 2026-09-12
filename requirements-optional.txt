@@ -1,0 +1,18 @@
+# Optional extras -- install only what you need.
+# Microphone input (needs system portaudio first):
+#   Windows: pip install pipwin && pipwin install pyaudio
+#   macOS:   brew install portaudio && pip install pyaudio
+#   Linux:   sudo apt install portaudio19-dev && pip install pyaudio
+PyAudio==0.2.14  # optional: microphone only, NOT needed for file transcription
+
+# Convert MP3/OGG/M4A to WAV first (needs system ffmpeg):
+#   sudo apt install ffmpeg / brew install ffmpeg / winget install ffmpeg
+pydub==0.25.1  # optional: audio conversion helper
+
+# OCR fallback for scanned PDFs (needs system poppler + tesseract):
+#   sudo apt install poppler-utils tesseract-ocr tesseract-ocr-fas
+pdf2image==1.17.0  # optional: scanned-PDF OCR fallback (--ocr-fallback)
+
+# Offline speech-to-text alternatives (no Google API, no internet):
+# faster-whisper==1.0.3  # optional offline STT
+# vosk==0.3.45           # optional offline STT

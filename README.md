@@ -4,6 +4,12 @@
 
 > Cross-platform OCR, PDF text extractor and speech-to-text tool in Python (CLI + Kivy GUI, Persian supported).
 
+<p align="center">
+  <a href="https://alvandcode.github.io/ocr-stt-tool/tutorial.html"><b>📖 آموزش قدم‌به‌قدم استفاده (موبایل + ویندوز + لینوکس + مک)</b></a>
+</p>
+
+> اگر دکمه آموزش باز نشد: فایل `docs/tutorial.html` را دانلود و مستقیم در مرورگر باز کنید، یا در تنظیمات ریپو GitHub Pages را روی Branch ‏`main` و پوشه `docs` فعال کنید تا همان دکمه آنلاین شود.
+
 <div dir="rtl">
 
 ## ابزار استخراج متن و تبدیل گفتار
@@ -56,6 +62,17 @@
 
 ---
 
+📖 آموزش قدم‌به‌قدم
+
+اگر تازه شروع کرده‌ای، صفحه آموزش تعاملی را باز کن — بخش موبایل (اندروید/آیفون) و دسکتاپ (ویندوز/لینوکس/مک) کاملاً تفکیک شده‌اند:
+
+<p align="center">
+  <a href="https://alvandcode.github.io/ocr-stt-tool/tutorial.html"><b>📖 ورود به صفحه آموزش</b></a>
+  · <a href="docs/tutorial.html">مشاهده فایل آموزش در ریپو</a>
+</p>
+
+---
+
 📁 ساختار پروژه
 
 ```text
@@ -80,6 +97,8 @@ ocr-stt-tool/
 ├─ tests/
 │  ├─ test_smoke.py
 │  └─ test_golden.py
+├─ docs/
+│  └─ tutorial.html
 ├─ requirements.txt
 ├─ requirements-gui.txt
 ├─ requirements-optional.txt

@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+- Interactive Persian tutorial page `docs/tutorial.html` (mobile + desktop,
+  responsive, offline single-file) linked from README via a tutorial button.
+
 ## [1.2.0] - 2026-09-12
 
 ### Added

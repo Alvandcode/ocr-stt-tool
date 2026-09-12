@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>آموزش قدم‌به‌قدم OCR-STT Tool | موبایل و دسکتاپ</title>
+<meta name="description" content="آموزش تصویری و قدم‌به‌قدم استفاده از ابزار OCR-STT در گوشی (اندروید و آیفون) و کامپیوتر (ویندوز، لینوکس و مک)">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b1220; --bg2:#0f1a30; --card:#14213d; --card2:#1a2a4d;
+    --line:rgba(255,255,255,.09); --txt:#eef2ff; --muted:#a9b4d0;
+    --teal:#2dd4bf; --teal-d:#0d9488; --amber:#fbbf24; --blue:#60a5fa;
+    --green:#34d399; --rose:#fb7185; --radius:18px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; color:var(--txt);
+    font-family:"Vazirmatn",Tahoma,"IRANSans","Segoe UI",sans-serif;
+    background:
+      radial-gradient(1100px 500px at 85% -5%, rgba(45,212,191,.16), transparent 60%),
+      radial-gradient(900px 480px at 10% 0%, rgba(96,165,250,.16), transparent 60%),
+      linear-gradient(180deg,var(--bg),var(--bg2));
+    line-height:2; font-size:16px;
+  }
+  a{color:var(--teal)}
+  .wrap{max-width:1060px;margin:0 auto;padding:0 20px 90px}
+
+  /* ---------- Hero ---------- */
+  .hero{position:relative;overflow:hidden;border-radius:0 0 34px 34px;
+    background:linear-gradient(135deg,#0ea5a5 0%,#2563eb 55%,#7c3aed 100%);
+    padding:64px 20px 70px;text-align:center;box-shadow:0 24px 70px rgba(0,0,0,.45)}
+  .hero::before,.hero::after{content:"";position:absolute;border-radius:50%;filter:blur(2px);opacity:.28}
+  .hero::before{width:340px;height:340px;background:#fff;top:-160px;left:-90px}
+  .hero::after{width:260px;height:260px;background:#fde68a;bottom:-140px;right:-70px}
+  .hero h1{margin:0 0 10px;font-size:clamp(26px,5vw,46px);font-weight:900;text-shadow:0 3px 18px rgba(0,0,0,.35)}
+  .hero p{margin:8px auto 0;max-width:720px;color:#f1f5ff;font-size:clamp(15px,2.6vw,19px)}
+  .hero .badges{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:22px}
+  .badge{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.35);
+    padding:6px 16px;border-radius:999px;font-size:14px;font-weight:700;backdrop-filter:blur(6px)}
+
+  /* ---------- Sticky nav ---------- */
+  nav{position:sticky;top:0;z-index:50;backdrop-filter:blur(12px);
+    background:rgba(11,18,32,.82);border-bottom:1px solid var(--line)}
+  nav .inner{max-width:1060px;margin:0 auto;padding:10px 16px;display:flex;gap:8px;
+    overflow-x:auto;scrollbar-width:none}
+  nav .inner::-webkit-scrollbar{display:none}
+  nav a{flex:0 0 auto;text-decoration:none;color:var(--txt);font-weight:700;font-size:14px;
+    padding:8px 16px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.04);
+    transition:.2s}
+  nav a:hover,nav a.active{background:var(--teal);color:#06251f;border-color:var(--teal)}
+
+  /* ---------- Sections & cards ---------- */
+  section{margin-top:46px}
+  .sec-head{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+  .sec-head .ico{width:52px;height:52px;flex:0 0 52px;border-radius:16px;display:grid;place-items:center;
+    background:linear-gradient(135deg,var(--teal-d),#2563eb);box-shadow:0 10px 26px rgba(45,212,191,.25)}
+  .sec-head .ico svg{width:28px;height:28px;stroke:#fff}
+  .sec-head h2{margin:0;font-size:clamp(20px,3.6vw,28px);font-weight:900}
+  .sec-head small{display:block;color:var(--muted);font-weight:400;font-size:14px}
+  .card{background:linear-gradient(180deg,var(--card),var(--card2));
+    border:1px solid var(--line);border-radius:var(--radius);padding:24px;margin:16px 0;
+    box-shadow:0 14px 40px rgba(0,0,0,.35)}
+  .card h3{margin:0 0 8px;font-size:19px;color:var(--amber)}
+  .card h3 .tag{font-size:12px;background:rgba(251,191,36,.15);border:1px solid rgba(251,191,36,.4);
+    color:var(--amber);border-radius:999px;padding:2px 12px;margin-right:8px;vertical-align:middle}
+  .card h3 .tag.ok{background:rgba(52,211,153,.12);border-color:rgba(52,211,153,.45);color:var(--green)}
+  .card h3 .tag.warn{background:rgba(251,113,133,.12);border-color:rgba(251,113,133,.45);color:var(--rose)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin:14px 0}
+  .mini{background:rgba(255,255,255,.045);border:1px solid var(--line);border-radius:14px;padding:16px}
+  .mini b{color:var(--teal)}
+  ol.steps,ul.tips{margin:10px 0;padding-right:22px}
+  ol.steps li,ul.tips li{margin:8px 0}
+  ol.steps li::marker{color:var(--teal);font-weight:900}
+
+  /* ---------- Code ---------- */
+  .code{position:relative;background:#070d1a;border:1px solid var(--line);border-radius:14px;
+    margin:12px 0;overflow:hidden}
+  .code header{display:flex;justify-content:space-between;align-items:center;
+    padding:6px 14px;font-size:12.5px;color:var(--muted);border-bottom:1px solid var(--line);
+    background:rgba(255,255,255,.03)}
+  .code pre{direction:ltr;text-align:left;margin:0;padding:14px 16px;overflow-x:auto;
+    font-family:Consolas,"Cascadia Code",monospace;font-size:13.5px;line-height:1.9;color:#d7f9f0}
+  .code .out{border-top:1px dashed var(--line);color:#9fe8c9}
+  .copy{cursor:pointer;border:1px solid var(--teal);background:transparent;color:var(--teal);
+    border-radius:9px;padding:3px 14px;font-family:inherit;font-size:12.5px;font-weight:700;transition:.2s}
+  .copy:hover{background:var(--teal);color:#06251f}
+
+  /* ---------- Callouts & table ---------- */
+  .note{border-radius:14px;padding:14px 18px;margin:12px 0;font-size:15px;border:1px solid}
+  .note.info{background:rgba(96,165,250,.1);border-color:rgba(96,165,250,.4)}
+  .note.ok{background:rgba(52,211,153,.1);border-color:rgba(52,211,153,.4)}
+  .note.warn{background:rgba(251,191,36,.1);border-color:rgba(251,191,36,.45)}
+  .note.bad{background:rgba(251,113,133,.1);border-color:rgba(251,113,133,.45)}
+  .note b{display:block;margin-bottom:2px}
+  table{width:100%;border-collapse:collapse;font-size:14.5px;margin:12px 0}
+  th,td{border:1px solid var(--line);padding:10px 12px;text-align:right;vertical-align:top}
+  th{background:rgba(45,212,191,.12);color:var(--teal)}
+  tr:nth-child(even) td{background:rgba(255,255,255,.025)}
+  .tbl-wrap{overflow-x:auto;border-radius:14px}
+
+  footer{margin-top:60px;text-align:center;color:var(--muted);font-size:14px}
+  footer .top{display:inline-block;margin-top:12px;text-decoration:none;font-weight:700;
+    border:1px solid var(--teal);border-radius:999px;padding:8px 26px}
+
+  @media (max-width:640px){
+    body{font-size:15px}
+    .card{padding:18px}
+    .sec-head .ico{width:44px;height:44px;flex-basis:44px}
+  }
+</style>
+</head>
+<body id="top">
+
+<header class="hero">
+  <h1>آموزش قدم‌به‌قدم OCR-STT Tool</h1>
+  <p>استخراج متن از عکس و PDF و تبدیل گفتار به نوشتار — از نصب تا اجرای اولین دستور، در گوشی و کامپیوتر</p>
+  <div class="badges">
+    <span class="badge">اندروید و آیفون</span>
+    <span class="badge">ویندوز</span>
+    <span class="badge">لینوکس</span>
+    <span class="badge">مک</span>
+    <span class="badge">پشتیبانی از فارسی</span>
+  </div>
+</header>
+
+<nav><div class="inner" id="navlinks">
+  <a href="#mobile">موبایل</a>
+  <a href="#windows">ویندوز</a>
+  <a href="#linux">لینوکس</a>
+  <a href="#macos">مک</a>
+  <a href="#gui">رابط گرافیکی</a>
+  <a href="#docker">داکر</a>
+  <a href="#faq">عیب‌یابی</a>
+</div></nav>
+
+<div class="wrap">
+
+<!-- ================= MOBILE ================= -->
+<section id="mobile">
+  <div class="sec-head">
+    <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="11" y1="18" x2="13" y2="18"/></svg></span>
+    <h2>بخش اول: استفاده با گوشی<small>سه راه پیش رو داری — از ساده به سخت مرتب شده</small></h2>
+  </div>
+
+  <div class="card" id="android-termux">
+    <h3>راه پیشنهادی اندروید: ترموکس (Termux) <span class="tag ok">پیشنهاد ما</span></h3>
+    <p>ترموکس یک ترمینال واقعی لینوکس داخل اندروید است و خوشبختانه موتور OCR (تسرکت) هم داخل مخازن آن هست؛ یعنی بدون نیاز به فایل APK جدا، همان نسخه کامپیوتر را روی گوشی اجرا می‌کنی.</p>
+    <ol class="steps">
+      <li><b>نصب ترموکس:</b> از F-Droid یا صفحه GitHub ترموکس نصب کن <b>(نسخه گوگل‌پلی قدیمی و خراب است).</b></li>
+      <li><b>دسترسی به حافظه:</b> این دستور را یک‌بار بزن و دسترسی را تأیید کن تا به عکس‌ها و فایل‌هایت برسی:
+        <div class="code"><header><span>termux</span><button class="copy">کپی</button></header><pre>termux-setup-storage</pre></div>
+      </li>
+      <li><b>نصب ابزارهای لازم:</b>
+        <div class="code"><header><span>termux</span><button class="copy">کپی</button></header><pre>pkg update &amp;&amp; pkg install -y python tesseract tesseract-data-fas poppler ffmpeg git</pre></div>
+      </li>
+      <li><b>دریافت پروژه:</b>
+        <div class="code"><header><span>termux</span><button class="copy">کپی</button></header><pre>git clone https://github.com/Alvandcode/ocr-stt-tool.git
+cd ocr-stt-tool
+pip install -r requirements.txt</pre></div>
+      </li>
+      <li><b>اولین اجرا:</b> فایل‌ها داخل <span dir="ltr">/sdcard</span> هستند؛ مثلاً:
+        <div class="code"><header><span>termux</span><button class="copy">کپی</button></header><pre>python -m app.cli pdf /sdcard/Download/book.pdf --max-pages 3
+python -m app.cli image /sdcard/DCIM/photo.jpg --ocr-lang fas+eng
+python -m app.cli audio /sdcard/Download/voice.wav --lang fa-IR</pre></div>
+      </li>
+    </ol>
+    <div class="note warn"><b>نکته مهم حافظه گوشی</b>فایل صوتی طولانی را یک‌جا رونویسی نکن؛ ابزار کل فایل را در RAM می‌خواند. فایل‌های بالای ~۳۰ دقیقه را اول با اپ‌های برش صدا تکه‌تکه کن.</div>
+  </div>
+
+  <div class="card" id="android-apk">
+    <h3>راه پیشرفته اندروید: فایل APK <span class="tag warn">آزمایشی</span></h3>
+    <p>ساخت APK با Buildozer فقط روی لینوکس انجام می‌شود و چون باینری تسرکت داخل پکیج موبایل نیست، بخش OCR عکس روی APK کار نمی‌کند. اگر فقط استخراج متن PDF می‌خواهی:</p>
+    <ol class="steps">
+      <li>روی یک سیستم لینوکس، مخزن را کلون کن و <div class="code"><header><span>bash</span><button class="copy">کپی</button></header><pre>pip install buildozer
+buildozer -v android debug</pre></div></li>
+      <li>فایل خروجی داخل پوشه <span dir="ltr">bin/</span> ساخته می‌شود؛ آن را به گوشی منتقل و نصب کن.</li>
+    </ol>
+  </div>
+
+  <div class="card" id="ios">
+    <h3>آیفون (iOS) <span class="tag warn">توصیه نمی‌شود</span></h3>
+    <p>اپل اجازه نصب ابزارهای خط فرمان مثل تسرکت را نمی‌دهد، پس اجرای مستقیم پروژه روی آیفون عملی نیست. دو جایگزین داری:</p>
+    <ul class="tips">
+      <li><b>راه ساده:</b> فایل را با همان گوشی برای خودت بفرست و روی کامپیوتر یا داکر اجرا کن (بخش‌های بعدی).</li>
+      <li><b>راه فنی:</b> بیلد Kivy-iOS فقط رابط گرافیکی را بالا می‌آورد و OCR عکس همچنان کار نمی‌کند؛ وقتش را فقط اگر توسعه‌دهنده iOS هستی بگذار.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ================= WINDOWS ================= -->
+<section id="windows">
+  <div class="sec-head">
+    <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="2" y="4" width="20" height="14" rx="2"/><line x1="8" y1="22" x2="16" y2="22"/><line x1="12" y1="18" x2="12" y2="22"/></svg></span>
+    <h2>بخش دوم: ویندوز (۱۰ و ۱۱)<small>حدود ۱۰ دقیقه تا اولین استخراج متن</small></h2>
+  </div>
+  <div class="card">
+    <ol class="steps">
+      <li><b>نصب پایتون:</b> از <span dir="ltr">python.org</span> نسخه 3.10 تا 3.13 را دانلود کن و موقع نصب تیک <span dir="ltr">Add python.exe to PATH</span> را حتماً بزن. (پایتون 3.15 با موتور گفتار گوگل ناسازگار است.)</li>
+      <li><b>نصب تسرکت:</b> نصب‌کننده UB-Mannheim را بگیر و موقع نصب زبان <b>Persian (fas)</b> را هم انتخاب کن. بعد در CMD تست کن:
+        <div class="code"><header><span>cmd</span><button class="copy">کپی</button></header><pre>tesseract --version
+tesseract --list-langs</pre></div>
+        اگر دستور شناخته نشد، پوشه نصب (مثلاً <span dir="ltr">C:\Program Files\Tesseract-OCR</span>) را به PATH ویندوز اضافه کن.
+      </li>
+      <li><b>دریافت و نصب پروژه:</b>
+        <div class="code"><header><span>cmd</span><button class="copy">کپی</button></header><pre>git clone https://github.com/Alvandcode/ocr-stt-tool.git
+cd ocr-stt-tool
+pip install -r requirements.txt</pre></div>
+      </li>
+      <li><b>اولین دستورها:</b>
+        <div class="code"><header><span>cmd</span><button class="copy">کپی</button></header><pre>python -m app.cli pdf examples\sample.pdf
+python -m app.cli image "C:\Users\You\Pictures\note.jpg" --ocr-lang fas+eng
+python -m app.cli audio voice.wav --lang fa-IR -o result.txt</pre><pre class="out">--- Page 1 ---
+Hello OCR-STT</pre></div>
+      </li>
+    </ol>
+    <div class="note info"><b>مسیر فارسی و فاصله‌دار</b>اگر مسیر فایل فارسی است یا فاصله دارد، حتماً داخل گیومه بگذار: <span dir="ltr">"C:\My Docs\کتاب.pdf"</span></div>
+  </div>
+</section>
+
+<!-- ================= LINUX ================= -->
+<section id="linux">
+  <div class="sec-head">
+    <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="2" y1="8" x2="22" y2="8"/><circle cx="4.5" cy="5.5" r=".8"/></svg></span>
+    <h2>بخش سوم: لینوکس (اوبونتو / دبیان)<small>سریع‌ترین مسیر؛ همه‌چیز با یک خط نصب می‌شود</small></h2>
+  </div>
+  <div class="card">
+    <ol class="steps">
+      <li><b>نصب یکجای وابستگی‌های سیستمی:</b>
+        <div class="code"><header><span>bash</span><button class="copy">کپی</button></header><pre>sudo apt update &amp;&amp; sudo apt install -y python3 python3-pip \
+  tesseract-ocr tesseract-ocr-fas tesseract-ocr-eng poppler-utils ffmpeg git</pre></div>
+      </li>
+      <li><b>دریافت و نصب پروژه:</b>
+        <div class="code"><header><span>bash</span><button class="copy">کپی</button></header><pre>git clone https://github.com/Alvandcode/ocr-stt-tool.git
+cd ocr-stt-tool
+pip install -r requirements.txt</pre></div>
+      </li>
+      <li><b>اولین دستورها + خروجی JSON و زیرنویس:</b>
+        <div class="code"><header><span>bash</span><button class="copy">کپی</button></header><pre>python -m app.cli pdf examples/sample.pdf
+python -m app.cli pdf scan.pdf --ocr-fallback --ocr-lang fas+eng
+python -m app.cli audio speech.wav --lang fa-IR --format json -o res.json
+pip install faster-whisper
+python -m app.cli audio speech.wav --engine whisper --format srt -o subs.srt</pre></div>
+      </li>
+    </ol>
+    <div class="note ok"><b>چرا لینوکس بهترین است؟</b>ساخت APK، داکر و نصب فارسی تسرکت همه بدون دردسر اضافه (PATH و نصب‌کننده جدا) انجام می‌شود.</div>
+  </div>
+</section>
+
+<!-- ================= MACOS ================= -->
+<section id="macos">
+  <div class="sec-head">
+    <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="3"/><line x1="12" y1="18.5" x2="12" y2="18.6"/></svg></span>
+    <h2>بخش چهارم: مک (macOS)<small>با Homebrew در سه قدم</small></h2>
+  </div>
+  <div class="card">
+    <ol class="steps">
+      <li><b>نصب Homebrew</b> (اگر نداری، دستورش در سایت brew.sh است) <b>و بعد:</b>
+        <div class="code"><header><span>bash</span><button class="copy">کپی</button></header><pre>brew install python tesseract tesseract-lang poppler ffmpeg git</pre></div>
+      </li>
+      <li><b>دریافت و نصب پروژه:</b>
+        <div class="code"><header><span>bash</span><button class="copy">کپی</button></header><pre>git clone https://github.com/Alvandcode/ocr-stt-tool.git
+cd ocr-stt-tool
+pip3 install -r requirements.txt</pre></div>
+      </li>
+      <li><b>اجرا:</b>
+        <div class="code"><header><span>bash</span><button class="copy">کپی</button></header><pre>python3 -m app.cli image photo.jpg --ocr-lang fas+eng --normalize-fa
+python3 -m app.cli audio voice.wav --lang fa-IR</pre></div>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<!-- ================= GUI ================= -->
+<section id="gui">
+  <div class="sec-head">
+    <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><line x1="3" y1="9" x2="21" y2="9"/><circle cx="6" cy="6" r=".8"/></svg></span>
+    <h2>بخش پنجم: رابط گرافیکی (بدون تایپ دستور)<small>برای هر سه سیستم‌عامل یکسان است</small></h2>
+  </div>
+  <div class="card">
+    <ol class="steps">
+      <li>اول پکیج گرافیکی را نصب کن:
+        <div class="code"><header><span>bash</span><button class="copy">کپی</button></header><pre>pip install -r requirements-gui.txt
+python -m app.gui_kivy</pre></div>
+      </li>
+      <li>از لیست فایل‌ها، فایلت را <b>انتخاب</b> کن (فیلتر فرمت‌ها فعال است).</li>
+      <li>زبان گفتار (fa-IR/en-US)، زبان OCR و موتور (google/whisper) را از منوها بگذار؛ تیک <b>Normalize FA</b> خروجی فارسی را تمیز می‌کند.</li>
+      <li>دکمه <b>Image / PDF / Audio به متن</b> را بزن؛ نتیجه در کادر اسکرول‌دار می‌آید و موتور و زمان اجرا هم در نوار وضعیت نمایش داده می‌شود.</li>
+    </ol>
+  </div>
+</section>
+
+<!-- ================= DOCKER ================= -->
+<section id="docker">
+  <div class="sec-head">
+    <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="2" y="7" width="20" height="10" rx="2"/><line x1="6" y1="7" x2="6" y2="17"/><line x1="12" y1="7" x2="12" y2="17"/></svg></span>
+    <h2>بخش ششم: راه میان‌بر — داکر<small>بدون نصب پایتون و تسرکت؛ فقط داکر کافی است</small></h2>
+  </div>
+  <div class="card">
+    <div class="code"><header><span>bash</span><button class="copy">کپی</button></header><pre>docker build -t ocrstt:1.2.0 .
+docker run --rm -v "$PWD/examples:/data" ocrstt:1.2.0 pdf /data/sample.pdf
+docker run --rm -v "$PWD:/work" ocrstt:1.2.0 audio /work/speech.wav --lang fa-IR --format json</pre></div>
+    <div class="note info"><b>در ویندوز</b>به‌جای <span dir="ltr">$PWD</span> مسیر کامل پوشه را بگذار، مثلاً <span dir="ltr">-v "C:\Docs:/work"</span>. اول Docker Desktop را نصب و اجرا کن.</div>
+  </div>
+</section>
+
+<!-- ================= FAQ ================= -->
+<section id="faq">
+  <div class="sec-head">
+    <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><circle cx="12" cy="16" r=".9"/></svg></span>
+    <h2>بخش هفتم: عیب‌یابی سریع<small>۹۰٪ خطاها یکی از این شش‌تاست</small></h2>
+  </div>
+  <div class="card"><div class="tbl-wrap"><table>
+    <tr><th>نشانه</th><th>علت</th><th>راه‌حل</th></tr>
+    <tr><td>Tesseract binary not found</td><td>تسرکت نصب نیست یا در PATH نیست</td><td>بخش نصب سیستم‌عامل خودت را دوباره انجام بده و <span dir="ltr">tesseract --version</span> را تست کن</td></tr>
+    <tr><td>خروجی PDF خالی است</td><td>PDF اسکن‌شده و بدون لایه متن است</td><td>با <span dir="ltr">--ocr-fallback</span> اجرا کن (نیازمند poppler + تسرکت)</td></tr>
+    <tr><td>SpeechRecognition / aifc خطا می‌دهد</td><td>پایتون 3.15 با این کتابخانه ناسازگار است</td><td>پایتون 3.10 تا 3.13 نصب کن یا <span dir="ltr">--engine whisper</span> بزن</td></tr>
+    <tr><td>Unsupported audio extension (mp3…)</td><td>فقط wav/aiff/flac مستقیم خوانده می‌شود</td><td>با ffmpeg تبدیل کن: <span dir="ltr">ffmpeg -i in.mp3 out.wav</span></td></tr>
+    <tr><td>سرویس گوگل در دسترس نیست / اینترنت</td><td>قطعی نت، فیلترینگ یا سقف سهمیه</td><td>اتصال را چک کن یا آفلاین با <span dir="ltr">--engine whisper</span> کار کن</td></tr>
+    <tr><td>حروف فارسی به‌هم‌ریخته (ي / ك عربی)</td><td>خروجی خام OCR است</td><td>فلگ <span dir="ltr">--normalize-fa</span> را اضافه کن</td></tr>
+  </table></div></div>
+  <div class="card">
+    <h3>یادآوری حریم خصوصی</h3>
+    <p>حالت گفتار با موتور <b>google</b> صدا را به سرور گوگل می‌فرستد و اینترنت می‌خواهد. برای فایل‌های حساس از <b>whisper آفلاین</b> استفاده کن.</p>
+  </div>
+</section>
+
+<footer>
+  ساخته‌شده برای پروژه OCR-STT Tool — نسخه 1.2.0<br>
+  <a class="top" href="#top">بازگشت به بالا</a>
+</footer>
+
+</div>
+
+<script>
+(function(){
+  // Copy buttons
+  document.querySelectorAll('.code').forEach(function(box){
+    var btn = box.querySelector('.copy'), pre = box.querySelector('pre');
+    if(!btn || !pre) return;
+    btn.addEventListener('click', function(){
+      var txt = pre.innerText;
+      function done(){ btn.textContent = 'کپی شد ✓'; setTimeout(function(){ btn.textContent = 'کپی'; }, 1500); }
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(txt).then(done).catch(function(){ fallback(); });
+      } else { fallback(); }
+      function fallback(){
+        var ta = document.createElement('textarea');
+        ta.value = txt; document.body.appendChild(ta); ta.select();
+        try{ document.execCommand('copy'); }catch(e){}
+        document.body.removeChild(ta); done();
+      }
+    });
+  });
+  // Active nav highlight
+  var links = Array.prototype.slice.call(document.querySelectorAll('#navlinks a'));
+  var map = {};
+  links.forEach(function(a){ map[a.getAttribute('href').slice(1)] = a; });
+  var obs = new IntersectionObserver(function(entries){
+    entries.forEach(function(en){
+      if(en.isIntersecting){
+        links.forEach(function(a){ a.classList.remove('active'); });
+        var a = map[en.target.id]; if(a) a.classList.add('active');
+      }
+    });
+  }, {rootMargin:'-40% 0px -55% 0px'});
+  ['mobile','windows','linux','macos','gui','docker','faq'].forEach(function(id){
+    var el = document.getElementById(id); if(el) obs.observe(el);
+  });
+})();
+</script>
+</body>
+</html>

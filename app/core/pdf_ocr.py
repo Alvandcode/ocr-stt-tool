@@ -125,7 +125,7 @@ def pdf_to_text(
                     pages=len(pages),
                     elapsed_sec=time.perf_counter() - started,
                 )
-            text = "\n\n".join(c for c in chunks if c).strip()
+            text = "\n\n".join(chunks).strip()
             return ExtractResult(
                 text=text,
                 engine=engine,

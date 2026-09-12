@@ -16,14 +16,16 @@ from kivy.uix.button import Button
 from kivy.uix.checkbox import CheckBox
 from kivy.uix.filechooser import FileChooserListView
 from kivy.uix.label import Label
-from kivy.uix.scrollview import ScrollView
 from kivy.uix.spinner import Spinner
 from kivy.uix.textinput import TextInput
 
-from app.core import audio_to_text, image_to_text, pdf_to_text
 from app.core.models import ExtractResult
 
-STT_LANGS = ("fa-IR", "en-US")
+# NOTE: backend imports (kivy-adjacent heavy deps like pdfplumber /
+# SpeechRecognition) are lazy inside the callbacks so the GUI can still
+# start when only one backend is broken or missing.
+
+STT_LANGS = ("fa-IR", "en-US", "ar-SA", "de-DE", "fr-FR")
 OCR_LANGS = ("fas+eng", "fas", "eng")
 STT_ENGINES = ("google", "whisper")
 
@@ -69,24 +71,29 @@ class MainLayout(BoxLayout):
         self.btn_image = Button(text="Image → Text")
         self.btn_pdf = Button(text="PDF → Text")
         self.btn_audio = Button(text="Audio → Text")
+        self.btn_save = Button(text="Save output")
         self.btn_image.bind(on_press=self.run_image)
         self.btn_pdf.bind(on_press=self.run_pdf)
         self.btn_audio.bind(on_press=self.run_audio)
+        self.btn_save.bind(on_press=self.save_output)
         btn_layout.add_widget(self.btn_image)
         btn_layout.add_widget(self.btn_pdf)
         btn_layout.add_widget(self.btn_audio)
+        btn_layout.add_widget(self.btn_save)
         self.add_widget(btn_layout)
 
+        # NOTE: TextInput scrolls internally; wrapping it in a ScrollView
+        # causes nested-scroll conflicts on touch devices, so it fills
+        # the remaining space directly.
         self.output = TextInput(
             text="Output will appear here",
             readonly=True,
             multiline=True,
         )
-        scroll = ScrollView()
-        scroll.add_widget(self.output)
-        self.add_widget(scroll)
+        self.add_widget(self.output)
 
         self._worker: threading.Thread | None = None
+        self._last_text = ""
 
     # -- helpers ------------------------------------------------------
     def _get_path(self) -> str | None:
@@ -94,21 +101,20 @@ class MainLayout(BoxLayout):
         return sel[0] if sel else None
 
     def _set_busy(self, busy: bool, msg: str = "") -> None:
-        for btn in (self.btn_image, self.btn_pdf, self.btn_audio):
+        for btn in (self.btn_image, self.btn_pdf, self.btn_audio, self.btn_save):
             btn.disabled = busy
         if msg:
             self.status.text = msg
 
     def _finish_ok(self, result: ExtractResult, msg: str) -> None:
         def _update(_dt):
-            self.output.text = result.text if result.text.strip() else "(no text found)"
+            self._last_text = result.text if result.text.strip() else "(no text found)"
+            self.output.text = self._last_text
             notes = list(result.warnings)
             if self.norm_check.active:
                 notes.append("Persian normalization applied.")
-            self.status.text = (
-                f"{msg} ({result.engine}, {result.elapsed_sec:.1f}s)"
-                + (f" | {notes[0]}" if notes else "")
-            )
+            suffix = f" | {'; '.join(notes)}" if notes else ""
+            self.status.text = f"{msg} ({result.engine}, {result.elapsed_sec:.1f}s){suffix}"
             self._set_busy(False)
 
         Clock.schedule_once(_update)
@@ -159,33 +165,60 @@ class MainLayout(BoxLayout):
         self._worker.start()
 
     # -- button callbacks ---------------------------------------------
+    def save_output(self, _):
+        if not self._last_text or self._last_text == "Output will appear here":
+            self.status.text = "Nothing to save yet."
+            return
+        try:
+            with open("ocrstt_output.txt", "w", encoding="utf-8") as fh:
+                fh.write(self._last_text + "\n")
+        except OSError as exc:
+            self.status.text = "Save failed."
+            self.output.text = f"Error: cannot write ocrstt_output.txt: {exc}"
+            return
+        self.status.text = "Saved to ocrstt_output.txt"
+
     def run_image(self, _):
+        def _image(p, lang):
+            from app.core.image_ocr import image_to_text
+
+            return image_to_text(p, lang=lang)
+
         self._run_in_thread(
-            lambda p: image_to_text(p, lang=self.ocr_spinner.text),
+            _image, self.ocr_spinner.text,
             start_msg="Running OCR…",
         )
 
     def run_pdf(self, _):
+        def _pdf(p, ocr_lang):
+            from app.core.pdf_ocr import pdf_to_text
+
+            return pdf_to_text(p, ocr_lang=ocr_lang)
+
         self._run_in_thread(
-            lambda p: pdf_to_text(p, ocr_lang=self.ocr_spinner.text),
+            _pdf, self.ocr_spinner.text,
             start_msg="Extracting PDF text…",
         )
 
     def run_audio(self, _):
         engine = self.engine_spinner.text
         lang = self.stt_spinner.text
-        if engine == "whisper":
-            def _whisper(p):
+
+        def _audio(p, _engine=engine, _lang=lang):
+            if _engine == "whisper":
                 from app.core.whisper_stt import whisper_to_result
 
-                return whisper_to_result(p, lang=lang)
+                return whisper_to_result(p, lang=_lang)
+            from app.core.speech_to_text import audio_to_text
 
-            self._run_in_thread(_whisper, start_msg="Transcribing offline…")
-        else:
-            self._run_in_thread(
-                lambda p: audio_to_text(p, lang=lang),
-                start_msg="Transcribing audio (needs internet)…",
-            )
+            return audio_to_text(p, lang=_lang)
+
+        self._run_in_thread(
+            _audio,
+            start_msg="Transcribing offline…"
+            if engine == "whisper"
+            else "Transcribing audio (needs internet)…",
+        )
 
 
 class OCRSTTApp(App):

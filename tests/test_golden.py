@@ -52,6 +52,10 @@ def test_srt_timestamp_format():
     assert format_srt_timestamp(0) == "00:00:00,000"
     assert format_srt_timestamp(61.5) == "00:01:01,500"
     assert format_srt_timestamp(3661.25) == "01:01:01,250"
+    # rounding carry must propagate through minutes AND hours
+    assert format_srt_timestamp(59.9996) == "00:01:00,000"
+    assert format_srt_timestamp(3599.9996) == "01:00:00,000"
+    assert format_srt_timestamp(-5) == "00:00:00,000"
 
 
 def test_srt_export_segments():
@@ -245,3 +249,112 @@ def test_cli_parser_new_options():
     assert args.whisper_model == "base"
     assert args.format == "srt"
     assert args.normalize_fa is True
+
+
+def test_cli_version_flag(capsys):
+    with pytest.raises(SystemExit) as exc:
+        main(["--version"])
+    assert exc.value.code == 0
+    assert "1.2.1" in capsys.readouterr().out
+
+
+def test_cli_mode_specific_flags_rejected():
+    with pytest.raises(SystemExit):
+        main(["pdf", SAMPLE_PDF, "--engine", "whisper"])
+    with pytest.raises(SystemExit):
+        main(["image", SAMPLE_PNG, "--max-pages", "2"])
+    with pytest.raises(SystemExit):
+        main(["audio", SAMPLE_WAV, "--ocr-fallback"])
+
+
+def _write_scanned_pdf(path):
+    """Minimal PDF whose page has an empty content stream (no text layer)."""
+    objs = [
+        b"<< /Type /Catalog /Pages 2 0 R >>",
+        b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+        (b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 144] "
+         b"/Resources << >> /Contents 4 0 R >>"),
+        b"<< /Length 0 >>\nstream\n\nendstream",
+    ]
+    pdf = bytearray(b"%PDF-1.4\n")
+    offsets = [0]
+    for i, body in enumerate(objs, start=1):
+        offsets.append(len(pdf))
+        pdf += b"%d 0 obj\n%s\nendobj\n" % (i, body)
+    xref = len(pdf)
+    pdf += b"xref\n0 %d\n" % (len(objs) + 1)
+    pdf += b"0000000000 65535 f \n"
+    for off in offsets[1:]:
+        pdf += b"%010d 00000 n \n" % off
+    pdf += b"trailer\n<< /Size %d /Root 1 0 R >>\nstartxref\n%d\n%%%%EOF" % (
+        len(objs) + 1, xref)
+    Path(path).write_bytes(bytes(pdf))
+
+
+def test_scanned_pdf_warns_instead_of_silent_empty(tmp_path):
+    scanned = tmp_path / "scan.pdf"
+    _write_scanned_pdf(str(scanned))
+    result = pdf_to_text(str(scanned))
+    assert result.text == ""
+    assert result.pages == 1
+    assert any("scanned" in w.lower() for w in result.warnings)
+
+
+def test_corrupt_pdf_raises_runtime_error(tmp_path):
+    bad = tmp_path / "bad.pdf"
+    bad.write_bytes(b"this is not a pdf at all \x00\x01\x02")
+    with pytest.raises(RuntimeError):
+        pdf_to_text(str(bad))
+
+
+def test_audio_model_passthrough(monkeypatch):
+    import sys
+    import types
+
+    import app.core.speech_to_text as stt
+
+    seen = {}
+
+    class _FakeSeg:
+        start, end, text = 0.0, 1.0, "hi"
+
+    class _FakeModel:
+        def __init__(self, name, *args, **kwargs):
+            seen["model"] = name
+
+        def transcribe(self, path, language=None):
+            return ([_FakeSeg()], {})
+
+    fake_mod = types.ModuleType("faster_whisper")
+    fake_mod.WhisperModel = _FakeModel
+    monkeypatch.setitem(sys.modules, "faster_whisper", fake_mod)
+
+    result = stt.audio_to_text(SAMPLE_WAV, engine="whisper", model="tiny")
+    assert seen["model"] == "tiny"
+    assert result.engine == "whisper:tiny"
+
+
+def test_cli_normalize_applies_to_segments(monkeypatch, tmp_path):
+    import sys
+    import types
+
+    class _FakeSeg:
+        start, end, text = 0.0, 2.0, "علي كتاب"
+
+    class _FakeModel:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def transcribe(self, path, language=None):
+            return ([_FakeSeg()], {})
+
+    fake_mod = types.ModuleType("faster_whisper")
+    fake_mod.WhisperModel = _FakeModel
+    monkeypatch.setitem(sys.modules, "faster_whisper", fake_mod)
+
+    out = tmp_path / "subs.srt"
+    rc = main(["audio", SAMPLE_WAV, "--engine", "whisper",
+               "--normalize-fa", "--format", "srt", "-o", str(out)])
+    assert rc == 0
+    srt = out.read_text(encoding="utf-8")
+    assert "علی" in srt and "کتاب" in srt

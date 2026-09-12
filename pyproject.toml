@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ocr-stt-tool"
-version = "1.2.0"
+version = "1.2.1"
 description = "Cross-platform OCR, PDF text extractor and speech-to-text tool (CLI + Kivy GUI)"
 readme = "README.md"
 license = { text = "MIT" }
@@ -20,7 +20,7 @@ dependencies = [
 
 [project.optional-dependencies]
 gui = ["kivy==2.3.0"]
-offline = ["faster-whisper==1.0.3"]
+offline = ["faster-whisper==1.2.1"]
 fa = ["hazm==0.10.0"]
 audio-mic = ["PyAudio==0.2.14"]
 audio-convert = ["pydub==0.25.1"]

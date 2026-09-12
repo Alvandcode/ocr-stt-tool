@@ -130,7 +130,7 @@ pip install -r requirements-gui.txt
 
 ```bash
 pip install -r requirements-optional.txt
-# یا انتخابی: pip install "ocr-stt-tool[offline,fa]"
+# یا انتخابی (از روی سورس): pip install ".[offline,fa]"
 ```
 
 2) نصب Tesseract OCR

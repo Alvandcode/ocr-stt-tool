@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.2.1] - 2026-09-12
+
+### Fixed
+- SRT timestamps at hour boundaries (`00:60:00,000` → `01:00:00,000`).
+- Tutorial Termux steps: Persian traineddata is downloaded manually
+  (no `tesseract-data-fas` package on Termux).
+- README optional-install command now uses `pip install ".[offline,fa]"`.
+- Mode-specific flags are validated (`--engine` audio-only,
+  `--max-pages`/`--ocr-fallback` pdf-only) instead of silently ignored.
+- `--normalize-fa` now normalizes subtitle segments too (json/srt consistent).
+- `audio_to_text(..., model=...)` passes the model to the whisper backend.
+- GUI imports backends lazily, drops nested ScrollView, shows all warnings,
+  adds Save button and more STT languages.
+- Dockerfile runs as non-root and runs the test suite during build.
+- `faster-whisper` bumped to 1.2.1.
+
+### Added
+- `--version` flag.
+
 ## [Unreleased]
 
 ### Added

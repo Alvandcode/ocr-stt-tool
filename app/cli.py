@@ -73,7 +73,23 @@ def build_parser() -> argparse.ArgumentParser:
         help="PDF only: OCR pages with empty text layer (scanned PDFs). "
         "Needs pdf2image + poppler + tesseract.",
     )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"%(prog)s {_app_version()}",
+        help="Show version and exit.",
+    )
     return parser
+
+
+def _app_version() -> str:
+    """Installed distribution version, falling back to the repo release."""
+    try:
+        from importlib.metadata import version
+
+        return version("ocr-stt-tool")
+    except Exception:  # noqa: BLE001 - not installed (running from source)
+        return "1.2.1"
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -82,6 +98,12 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.format == "srt" and args.mode != "audio":
         parser.error("--format srt is only supported for audio mode.")
+    if args.mode != "audio" and (
+        args.engine != "google" or args.whisper_model != "small"
+    ):
+        parser.error("--engine/--whisper-model are only supported for audio mode.")
+    if args.mode != "pdf" and (args.max_pages is not None or args.ocr_fallback):
+        parser.error("--max-pages/--ocr-fallback are only supported for pdf mode.")
 
     if not os.path.isfile(args.source):
         print(f"Error: file not found: {args.source}", file=sys.stderr)
@@ -104,19 +126,17 @@ def main(argv: list[str] | None = None) -> int:
         else:
             from app.core.speech_to_text import audio_to_text
 
-            if args.engine == "whisper":
-                from app.core.whisper_stt import whisper_to_result
-
-                result = whisper_to_result(
-                    args.source, lang=args.lang, model=args.whisper_model
-                )
-            else:
-                result = audio_to_text(args.source, lang=args.lang)
+            result = audio_to_text(
+                args.source, lang=args.lang,
+                engine=args.engine, model=args.whisper_model,
+            )
 
         if args.normalize_fa:
             from app.core.fa_normalize import normalize_persian
 
             result.text = normalize_persian(result.text)
+            for seg in result.segments or []:
+                seg.text = normalize_persian(seg.text)
     except FileNotFoundError as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 2
@@ -155,7 +175,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"Error: cannot write to '{args.output}': {exc}", file=sys.stderr)
             return 1
     else:
-        print(payload, end="" if payload.endswith("\n") else "\n")
+        print(payload, end="")
 
     return 0
 

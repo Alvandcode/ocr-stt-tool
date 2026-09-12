@@ -41,6 +41,7 @@ def audio_to_text(
     audio_path: str,
     lang: str = "fa-IR",
     engine: str = "google",
+    model: str = "small",
 ) -> ExtractResult:
     """Transcribe an audio file.
 
@@ -51,6 +52,8 @@ def audio_to_text(
             or whisper language tag (whisper engine).
         engine: ``"google"`` (online, default) or ``"whisper"``
             (offline via faster-whisper).
+        model: faster-whisper model for ``engine="whisper"``
+            (tiny/base/small/medium/large-v3). Ignored for google.
 
     Returns:
         :class:`ExtractResult` with a single timestamped segment
@@ -95,7 +98,7 @@ def audio_to_text(
     if engine == "whisper":
         from .whisper_stt import whisper_to_result
 
-        return whisper_to_result(audio_path, lang=lang)
+        return whisper_to_result(audio_path, lang=lang, model=model)
 
     if sr is None:
         raise RuntimeError(

@@ -154,8 +154,14 @@
       <li><b>دسترسی به حافظه:</b> این دستور را یک‌بار بزن و دسترسی را تأیید کن تا به عکس‌ها و فایل‌هایت برسی:
         <div class="code"><header><span>termux</span><button class="copy">کپی</button></header><pre>termux-setup-storage</pre></div>
       </li>
-      <li><b>نصب ابزارهای لازم:</b>
-        <div class="code"><header><span>termux</span><button class="copy">کپی</button></header><pre>pkg update &amp;&amp; pkg install -y python tesseract tesseract-data-fas poppler ffmpeg git</pre></div>
+      <li><b>نصب ابزارهای لازم</b> (دقت: پکیج ترموکس فقط زبان انگلیسی را همراه دارد):
+        <div class="code"><header><span>termux</span><button class="copy">کپی</button></header><pre>pkg update &amp;&amp; pkg install -y python tesseract poppler ffmpeg git curl</pre></div>
+      </li>
+      <li><b>افزودن زبان فارسی به تسرکت:</b> فایل زبان را دستی داخل پوشه tessdata بگذار و تست کن:
+        <div class="code"><header><span>termux</span><button class="copy">کپی</button></header><pre>mkdir -p $PREFIX/share/tessdata
+curl -L -o $PREFIX/share/tessdata/fas.traineddata https://github.com/tesseract-ocr/tessdata/raw/main/fas.traineddata
+tesseract --list-langs</pre></div>
+        اگر در خروجی <span dir="ltr">fas</span> را دیدی یعنی فارسی فعال شده است.
       </li>
       <li><b>دریافت پروژه:</b>
         <div class="code"><header><span>termux</span><button class="copy">کپی</button></header><pre>git clone https://github.com/Alvandcode/ocr-stt-tool.git

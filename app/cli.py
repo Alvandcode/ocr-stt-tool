@@ -79,6 +79,12 @@ def build_parser() -> argparse.ArgumentParser:
         version=f"%(prog)s {_app_version()}",
         help="Show version and exit.",
     )
+    parser.add_argument(
+        "--no-layout",
+        action="store_true",
+        help="Do NOT preserve original line breaks/spacing "
+        "(legacy fully-automatic extraction).",
+    )
     return parser
 
 
@@ -89,7 +95,7 @@ def _app_version() -> str:
 
         return version("ocr-stt-tool")
     except Exception:  # noqa: BLE001 - not installed (running from source)
-        return "1.2.2"
+        return "1.3.0"
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -113,7 +119,10 @@ def main(argv: list[str] | None = None) -> int:
         if args.mode == "image":
             from app.core.image_ocr import image_to_text
 
-            result = image_to_text(args.source, lang=args.ocr_lang)
+            result = image_to_text(
+                args.source, lang=args.ocr_lang,
+                preserve_layout=not args.no_layout,
+            )
         elif args.mode == "pdf":
             from app.core.pdf_ocr import pdf_to_text
 
@@ -122,6 +131,7 @@ def main(argv: list[str] | None = None) -> int:
                 max_pages=args.max_pages,
                 ocr_fallback=args.ocr_fallback,
                 ocr_lang=args.ocr_lang,
+                layout=not args.no_layout,
             )
         else:
             from app.core.speech_to_text import audio_to_text

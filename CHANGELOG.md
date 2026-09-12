@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.3.0] - 2026-09-12
+
+### Added
+- Layout preservation: image OCR keeps line breaks, paragraph gaps and
+  inter-word spacing (PSM 6); PDF extraction uses pdfplumber layout mode.
+  Opt out with `--no-layout`.
+- Web tool page ranges (e.g. 1-10, 11-20) so large PDFs can be read in
+  chunks; web OCR now also requests layout-preserving recognition.
+- Interactive Persian tutorial page `docs/tutorial.html` (mobile + desktop,
+  responsive, offline single-file) linked from README via a tutorial button.
+- Browser-based OCR `docs/web-ocr.html` (Tesseract.js, Persian+English,
+  single file, responsive) for non-technical users + README buttons.
+- Web tool PDF support (pdf.js page rendering + per-page OCR,
+  fully client-side).
+
 ## [1.2.2] - 2026-09-12
 
 ### Fixed
@@ -26,16 +41,6 @@
 
 ### Added
 - `--version` flag.
-
-## [Unreleased]
-
-### Added
-- Interactive Persian tutorial page `docs/tutorial.html` (mobile + desktop,
-  responsive, offline single-file) linked from README via a tutorial button.
-- Browser-based OCR `docs/web-ocr.html` (Tesseract.js, Persian+English,
-  single file, responsive) for non-technical users + README buttons.
-- Web tool now also supports PDF (pdf.js page rendering + per-page OCR,
-  first 10 pages, fully client-side).
 
 ## [1.2.0] - 2026-09-12
 

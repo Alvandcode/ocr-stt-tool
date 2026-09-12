@@ -17,7 +17,17 @@ MAX_IMAGE_BYTES = 30 * 1024 * 1024
 SUPPORTED_EXTENSIONS = {".png", ".jpg", ".jpeg", ".tif", ".tiff", ".bmp", ".webp"}
 
 
-def image_to_text(image_path: str, lang: str = "fas+eng") -> ExtractResult:
+# PSM 6 = uniform text block: keeps line breaks and paragraph gaps as seen.
+# preserve_interword_spaces keeps the original gaps between words instead of
+# collapsing them to a single space.
+LAYOUT_CONFIG = "--psm 6 -c preserve_interword_spaces=1"
+
+
+def image_to_text(
+    image_path: str,
+    lang: str = "fas+eng",
+    preserve_layout: bool = True,
+) -> ExtractResult:
     """Extract text from an image file.
 
     Args:
@@ -25,6 +35,10 @@ def image_to_text(image_path: str, lang: str = "fas+eng") -> ExtractResult:
         lang: Tesseract language codes, e.g. ``"fas"``, ``"eng"``,
             ``"fas+eng"``. Persian requires the ``fas`` traineddata
             (``tesseract-ocr-fas`` on Linux).
+        preserve_layout: Keep line breaks, paragraph gaps and inter-word
+            spacing as in the image (PSM 6 + preserved spaces). Only the
+            leading/trailing blank lines are trimmed. Set to False for the
+            legacy fully-automatic segmentation.
 
     Returns:
         :class:`ExtractResult` with ``engine="tesseract"``.
@@ -59,7 +73,12 @@ def image_to_text(image_path: str, lang: str = "fas+eng") -> ExtractResult:
         with Image.open(image_path) as img:
             img.load()  # force decoding while file handle is open
             try:
-                text = pytesseract.image_to_string(img, lang=lang)
+                if preserve_layout:
+                    text = pytesseract.image_to_string(
+                        img, lang=lang, config=LAYOUT_CONFIG
+                    )
+                else:
+                    text = pytesseract.image_to_string(img, lang=lang)
             except TesseractNotFoundError as exc:
                 raise RuntimeError(
                     "Tesseract OCR binary not found. Install it first: "

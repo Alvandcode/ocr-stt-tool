@@ -45,10 +45,11 @@
   .drop small{color:var(--muted)}
   input[type=file]{display:none}
   .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:14px}
-  select{
+  select, input[type=number]{
     font-family:inherit;font-size:15px;font-weight:700;color:var(--txt);
     background:#0d1730;border:1px solid var(--line);border-radius:12px;padding:10px 14px;
   }
+  input[type=number]{width:92px;direction:ltr;text-align:center}
   button{
     font-family:inherit;font-size:16px;font-weight:900;color:#06251f;cursor:pointer;
     background:linear-gradient(135deg,var(--teal),#5eead4);border:none;border-radius:14px;
@@ -106,6 +107,13 @@
       </select>
       <button id="startBtn">استخراج متن</button>
     </div>
+    <div class="row" id="pageRangeRow" style="display:none">
+      <label for="pageFrom">از صفحه:</label>
+      <input type="number" id="pageFrom" min="1" value="1">
+      <label for="pageTo">تا صفحه:</label>
+      <input type="number" id="pageTo" min="1" value="10">
+      <small style="color:var(--muted)">حداکثر ۱۰ صفحه در هر اجرا — برای PDF بزرگ، چند بازه پشت سر هم بده</small>
+    </div>
     <div class="prog"><i id="progBar"></i></div>
     <p id="status">هنوز فایلی انتخاب نشده است.</p>
     <div class="note bad" id="errBox"></div>
@@ -128,7 +136,8 @@
       <b>سه نکته مهم</b>
       دفعه اول به اینترنت نیاز است تا موتور و داده زبان دانلود شود (بعدش از حافظه مرورگر استفاده می‌شود).
       فایل تو هیچ‌جا آپلود نمی‌شود؛ پردازش کاملاً داخل همین دستگاه انجام می‌شود.
-      از PDF حداکثر ۱۰ صفحه اول خوانده می‌شود؛ برای PDF حجیم یا فایل صوتی از نسخه کامپیوتر (CLI) استفاده کن.
+      چیدمان متن (سطرها و فاصله کلمات) تا حد امکان مثل اصل حفظ می‌شود.
+      در هر اجرا حداکثر ۱۰ صفحه خوانده می‌شود — برای PDF بزرگ، بازه‌های پشت سر هم (۱ تا ۱۰، ۱۱ تا ۲۰، …) بگذار.
     </div>
   </div>
 
@@ -153,6 +162,9 @@
   var dropZone = document.getElementById("dropZone");
   var preview = document.getElementById("preview");
   var fileInfo = document.getElementById("fileInfo");
+  var pageRangeRow = document.getElementById("pageRangeRow");
+  var pageFrom = document.getElementById("pageFrom");
+  var pageTo = document.getElementById("pageTo");
   var langSel = document.getElementById("langSel");
   var startBtn = document.getElementById("startBtn");
   var progBar = document.getElementById("progBar");
@@ -209,13 +221,14 @@
       preview.onload = function(){ URL.revokeObjectURL(url); };
       fileInfo.style.display = "none";
       fileInfo.textContent = "";
+      pageRangeRow.style.display = "none";
     } else {
       preview.style.display = "none";
       preview.removeAttribute("src");
       fileInfo.style.display = "block";
       fileInfo.textContent = "PDF انتخاب شد: " + (f.name || "بدون نام") +
-        " (" + faNum(Math.round(f.size / 1024)) + " کیلوبایت) — حداکثر " +
-        faNum(MAX_PDF_PAGES) + " صفحه اول خوانده می‌شود.";
+        " (" + faNum(Math.round(f.size / 1024)) + " کیلوبایت) — بازه صفحه را پایین بگذار.";
+      pageRangeRow.style.display = "flex";
     }
     outBox.value = "";
     charCount.textContent = "۰ کاراکتر";
@@ -250,6 +263,20 @@
       r.onerror = function(){ reject(new Error("read-failed")); };
       r.readAsArrayBuffer(file);
     });
+  }
+
+  // Ask Tesseract to keep original line breaks and word gaps.
+  // Wrapped defensively: older engines ignore unknown variables, so a
+  // failure here must never break the run -- we just use defaults.
+  function applyLayout(w){
+    try {
+      var p = w.setParameters({
+        preserve_interword_spaces: "1",
+        tessedit_pageseg_mode: "6"
+      });
+      if(p && typeof p.catch === "function"){ return p.catch(function(){}); }
+    } catch(e){}
+    return Promise.resolve();
   }
 
   startBtn.addEventListener("click", function(){
@@ -305,12 +332,12 @@
       newWorker(function(p){
         setProgress(p);
         setStatus("در حال خواندن متن عکس… " + faNum(Math.round(p * 100)) + "٪");
-      }).then(function(w){
-        worker = w;
-        return worker.recognize(currentFile);
-      }).then(function(result){
-        var text = (result && result.data && result.data.text ? result.data.text : "").trim();
-        cleanup(function(){ finishOk(text); });
+    }).then(function(w){
+      worker = w;
+      return applyLayout(w).then(function(){ return worker.recognize(currentFile); });
+    }).then(function(result){
+      var text = (result && result.data && result.data.text ? result.data.text : "").trim();
+      cleanup(function(){ finishOk(text); });
       }).catch(function(err){
         var msg = (err && err.message) ? err.message : String(err);
         cleanup(function(){ finishErr(langErr(msg)); });
@@ -326,18 +353,29 @@
       }
       return pdfjsLib.getDocument({data: buf}).promise;
     }).then(function(pdf){
-      var total = Math.min(pdf.numPages, MAX_PDF_PAGES);
-      var skipped = pdf.numPages - total;
-      setStatus("PDF با " + faNum(pdf.numPages) + " صفحه باز شد — خواندن " +
-        faNum(total) + " صفحه اول…");
+      var from = Math.max(1, parseInt(pageFrom.value, 10) || 1);
+      var to = Math.max(from, parseInt(pageTo.value, 10) || from);
+      if(to - from + 1 > MAX_PDF_PAGES){
+        throw {message: "RANGE_TOO_BIG"};
+      }
+      if(from > pdf.numPages){
+        throw {message: "RANGE_PAST_END:" + pdf.numPages};
+      }
+      var clamped = false;
+      if(to > pdf.numPages){ to = pdf.numPages; clamped = true; }
+      var total = to - from + 1;
+      setStatus("PDF با " + faNum(pdf.numPages) + " صفحه باز شد — خواندن صفحه " +
+        faNum(from) + " تا " + faNum(to) + "…");
       return newWorker(function(){ /* per-page progress below */ }).then(function(w){
         worker = w;
+        return applyLayout(w);
+      }).then(function(){
         var parts = [];
         var chain = Promise.resolve();
-        for(var i = 1; i <= total; i++){
-          (function(pageNum){
+        for(var i = from; i <= to; i++){
+          (function(pageNum, idx){
             chain = chain.then(function(){
-              setStatus("خواندن صفحه " + faNum(pageNum) + " از " + faNum(total) + "…");
+              setStatus("خواندن صفحه " + faNum(pageNum) + " (" + faNum(idx + 1) + " از " + faNum(total) + ")…");
               return pdf.getPage(pageNum).then(function(page){
                 var viewport = page.getViewport({scale: PDF_RENDER_SCALE});
                 var canvas = document.createElement("canvas");
@@ -349,16 +387,18 @@
                 }).then(function(result){
                   var t = (result && result.data && result.data.text ? result.data.text : "").trim();
                   parts.push("--- صفحه " + faNum(pageNum) + " ---\n" + t);
-                  setProgress((pageNum - 1) / total + (1 / total) * 0.999);
+                  setProgress(idx / total + (1 / total) * 0.999);
                 });
               });
             });
-          })(i);
+          })(i, i - from);
         }
         return chain.then(function(){
           var text = parts.join("\n\n").trim();
-          if(skipped > 0){
-            text += "\n\n(فقط " + faNum(total) + " صفحه اول خوانده شد — برای بقیه از نسخه کامپیوتر استفاده کن.)";
+          if(clamped){
+            text += "\n\n(تا صفحه آخر (" + faNum(to) + ") خوانده شد.)";
+          } else if(to < pdf.numPages){
+            text += "\n\n(ادامه از صفحه " + faNum(to + 1) + " — بازه بعدی را بگذار و دوباره استخراج بزن.)";
           }
           try { pdf.destroy(); } catch(e){}
           cleanup(function(){ finishOk(text); });
@@ -366,7 +406,11 @@
       });
     }).catch(function(err){
       var msg = (err && err.message) ? err.message : String(err);
-      if(msg === "read-failed" || (msg && msg.indexOf("InvalidPDF") !== -1) || (msg && msg.indexOf("password") !== -1)){
+      if(msg === "RANGE_TOO_BIG"){
+        cleanup(function(){ finishErr("بازه بزرگ‌تر از " + faNum(MAX_PDF_PAGES) + " صفحه است. بازه را کوچک‌تر کن و در چند مرحله بخوان."); });
+      } else if(msg.indexOf("RANGE_PAST_END:") === 0){
+        cleanup(function(){ finishErr("شماره صفحه از تعداد صفحات PDF (" + faNum(msg.split(":")[1]) + ") بیشتر است."); });
+      } else if(msg === "read-failed" || (msg && msg.indexOf("InvalidPDF") !== -1) || (msg && msg.indexOf("password") !== -1)){
         cleanup(function(){ finishErr("PDF خراب یا رمزدار است و باز نشد."); });
       } else {
         cleanup(function(){ finishErr(langErr(msg)); });

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ocr-stt-tool"
-version = "1.2.2"
+version = "1.3.0"
 description = "Cross-platform OCR, PDF text extractor and speech-to-text tool (CLI + Kivy GUI)"
 readme = "README.md"
 license = { text = "MIT" }

@@ -29,6 +29,7 @@ def pdf_to_text(
     max_pages: int | None = None,
     ocr_fallback: bool = False,
     ocr_lang: str = "fas+eng",
+    layout: bool = True,
 ) -> ExtractResult:
     """Extract text from all (or first N) pages of a PDF.
 
@@ -42,6 +43,8 @@ def pdf_to_text(
         max_pages: Process at most this many pages (DoS guard). ``None`` = all.
         ocr_fallback: If True, OCR pages whose text layer is empty.
         ocr_lang: Tesseract langs for the fallback path.
+        layout: Keep the original line breaks, column gaps and spacing
+            (pdfplumber ``layout`` mode) instead of reflowed text.
 
     Raises:
         FileNotFoundError: If the file does not exist.
@@ -84,7 +87,7 @@ def pdf_to_text(
             fallback_used = False
             for i, page in enumerate(pages, start=1):
                 try:
-                    page_text = page.extract_text() or ""
+                    page_text = page.extract_text(layout=layout) or ""
                 except Exception as exc:  # corrupt page content
                     raise RuntimeError(
                         f"Failed to extract text from page {i} of '{pdf_path}': {exc}"

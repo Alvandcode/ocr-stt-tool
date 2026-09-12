@@ -29,6 +29,12 @@ def test_pdf_sample_golden():
     assert result.warnings == []
 
 
+def test_pdf_layout_param_kept():
+    # layout on/off must both extract the same content on a simple PDF
+    assert "Hello OCR-STT" in pdf_to_text(SAMPLE_PDF, layout=True).text
+    assert "Hello OCR-STT" in pdf_to_text(SAMPLE_PDF, layout=False).text
+
+
 def test_result_json_roundtrip():
     result = ExtractResult(
         text="سلام دنیا",
@@ -101,13 +107,36 @@ def test_save_txt_json_srt(tmp_path):
 def test_image_mocked_ocr(monkeypatch):
     from app.core import image_ocr
 
-    monkeypatch.setattr(
-        image_ocr.pytesseract, "image_to_string", lambda img, lang=None: "  hello  "
-    )
+    seen = {}
+
+    def _fake_ocr(img, lang=None, config=None, **kwargs):
+        seen["lang"] = lang
+        seen["config"] = config
+        return "  hello  "
+
+    monkeypatch.setattr(image_ocr.pytesseract, "image_to_string", _fake_ocr)
     result = image_ocr.image_to_text(SAMPLE_PNG, lang="eng")
     assert result.text == "hello"
     assert result.engine == "tesseract"
     assert result.lang == "eng"
+    # layout-preserving config is the default
+    assert "preserve_interword_spaces" in (seen["config"] or "")
+    assert "psm 6" in (seen["config"] or "")
+
+
+def test_image_no_layout_uses_defaults(monkeypatch):
+    from app.core import image_ocr
+
+    seen = {}
+
+    def _fake_ocr(img, lang=None, config=None, **kwargs):
+        seen["config"] = config
+        return "hello"
+
+    monkeypatch.setattr(image_ocr.pytesseract, "image_to_string", _fake_ocr)
+    result = image_ocr.image_to_text(SAMPLE_PNG, preserve_layout=False)
+    assert result.text == "hello"
+    assert seen["config"] is None
 
 
 def test_audio_google_mocked(monkeypatch):
@@ -251,11 +280,22 @@ def test_cli_parser_new_options():
     assert args.normalize_fa is True
 
 
+def test_cli_no_layout_flag(tmp_path):
+    args = build_parser().parse_args(["pdf", "a.pdf", "--no-layout"])
+    assert args.no_layout is True
+    out = tmp_path / "res.txt"
+    rc = main(["pdf", SAMPLE_PDF, "--no-layout", "-o", str(out)])
+    assert rc == 0
+    assert "Hello OCR-STT" in out.read_text(encoding="utf-8")
+
+
 def test_cli_version_flag(capsys):
+    import re
+
     with pytest.raises(SystemExit) as exc:
         main(["--version"])
     assert exc.value.code == 0
-    assert "1.2.2" in capsys.readouterr().out
+    assert re.search(r"\d+\.\d+\.\d+", capsys.readouterr().out)
 
 
 def test_cli_mode_specific_flags_rejected():

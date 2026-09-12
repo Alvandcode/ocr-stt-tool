@@ -32,6 +32,8 @@
 ### Added
 - Interactive Persian tutorial page `docs/tutorial.html` (mobile + desktop,
   responsive, offline single-file) linked from README via a tutorial button.
+- Browser-based OCR `docs/web-ocr.html` (Tesseract.js, Persian+English,
+  single file, responsive) for non-technical users + README buttons.
 
 ## [1.2.0] - 2026-09-12
 

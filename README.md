@@ -6,6 +6,8 @@
 
 <p align="center">
   <a href="https://alvandcode.github.io/ocr-stt-tool/tutorial.html"><b>📖 آموزش قدم‌به‌قدم استفاده (موبایل + ویندوز + لینوکس + مک)</b></a>
+  ·
+  <a href="https://alvandcode.github.io/ocr-stt-tool/web-ocr.html"><b>🌐 نسخه وب بدون نصب (مخصوص کاربران عادی)</b></a>
 </p>
 
 > اگر دکمه آموزش باز نشد: فایل `docs/tutorial.html` را دانلود و مستقیم در مرورگر باز کنید، یا در تنظیمات ریپو GitHub Pages را روی Branch ‏`main` و پوشه `docs` فعال کنید تا همان دکمه آنلاین شود.
@@ -73,6 +75,20 @@
 
 ---
 
+🌐 نسخه وب بدون نصب (برای کاربران عادی)
+
+اگر حوصله خط فرمان و نصب نداری: فایل `docs/web-ocr.html` را دانلود کن و در مرورگر گوشی یا کامپیوتر باز کن.
+عکس را انتخاب می‌کنی و متن فارسی/انگلیسی را در کادر پایین تحویل می‌گیری — بدون نصب هیچ‌چیز، پردازش داخل خود دستگاه:
+
+<p align="center">
+  <a href="https://alvandcode.github.io/ocr-stt-tool/web-ocr.html"><b>🌐 اجرای نسخه وب</b></a>
+  · <a href="docs/web-ocr.html">دانلود فایل نسخه وب از ریپو</a>
+</p>
+
+> دفعه اول به اینترنت نیاز است تا موتور و داده زبان دانلود شود؛ عکس تو هیچ‌جا آپلود نمی‌شود.
+
+---
+
 📁 ساختار پروژه
 
 ```text
@@ -98,7 +114,8 @@ ocr-stt-tool/
 │  ├─ test_smoke.py
 │  └─ test_golden.py
 ├─ docs/
-│  └─ tutorial.html
+│  ├─ tutorial.html
+│  └─ web-ocr.html
 ├─ requirements.txt
 ├─ requirements-gui.txt
 ├─ requirements-optional.txt

@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OCR تحت وب | استخراج متن از عکس بدون نصب</title>
+<meta name="description" content="ابزار تحت وب استخراج متن از عکس (فارسی و انگلیسی) — بدون نصب، داخل مرورگر گوشی و کامپیوتر">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<style>
+  :root{
+    --bg:#0b1220; --bg2:#0f1a30; --card:#14213d; --card2:#1a2a4d;
+    --line:rgba(255,255,255,.09); --txt:#eef2ff; --muted:#a9b4d0;
+    --teal:#2dd4bf; --teal-d:#0d9488; --amber:#fbbf24; --blue:#60a5fa;
+    --green:#34d399; --rose:#fb7185; --radius:18px;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; color:var(--txt);
+    font-family:"Vazirmatn",Tahoma,"IRANSans","Segoe UI",sans-serif;
+    background:
+      radial-gradient(1100px 500px at 85% -5%, rgba(45,212,191,.16), transparent 60%),
+      radial-gradient(900px 480px at 10% 0%, rgba(96,165,250,.16), transparent 60%),
+      linear-gradient(180deg,var(--bg),var(--bg2));
+    line-height:2; font-size:16px; min-height:100vh;
+  }
+  .wrap{max-width:760px;margin:0 auto;padding:0 20px 80px}
+  .hero{background:linear-gradient(135deg,#0ea5a5 0%,#2563eb 55%,#7c3aed 100%);
+    border-radius:0 0 34px 34px;padding:52px 20px 56px;text-align:center;
+    box-shadow:0 24px 70px rgba(0,0,0,.45)}
+  .hero h1{margin:0 0 8px;font-size:clamp(24px,5vw,40px);font-weight:900;
+    text-shadow:0 3px 18px rgba(0,0,0,.35)}
+  .hero p{margin:6px auto 0;max-width:620px;color:#f1f5ff;font-size:clamp(14px,2.6vw,18px)}
+  .card{background:linear-gradient(180deg,var(--card),var(--card2));
+    border:1px solid var(--line);border-radius:var(--radius);padding:24px;margin:18px 0;
+    box-shadow:0 14px 40px rgba(0,0,0,.35)}
+  .card h2{margin:0 0 10px;font-size:19px;color:var(--amber)}
+  .drop{border:2px dashed rgba(45,212,191,.5);border-radius:16px;padding:30px 18px;
+    text-align:center;cursor:pointer;transition:.2s;background:rgba(45,212,191,.05)}
+  .drop:hover,.drop.over{background:rgba(45,212,191,.13);border-color:var(--teal)}
+  .drop b{display:block;font-size:18px}
+  .drop small{color:var(--muted)}
+  input[type=file]{display:none}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:14px}
+  select{
+    font-family:inherit;font-size:15px;font-weight:700;color:var(--txt);
+    background:#0d1730;border:1px solid var(--line);border-radius:12px;padding:10px 14px;
+  }
+  button{
+    font-family:inherit;font-size:16px;font-weight:900;color:#06251f;cursor:pointer;
+    background:linear-gradient(135deg,var(--teal),#5eead4);border:none;border-radius:14px;
+    padding:12px 30px;box-shadow:0 10px 26px rgba(45,212,191,.3);transition:.2s;
+  }
+  button:hover:not(:disabled){transform:translateY(-2px)}
+  button:disabled{opacity:.45;cursor:wait;box-shadow:none}
+  button.ghost{background:transparent;color:var(--teal);border:1px solid var(--teal);box-shadow:none;
+    font-size:14px;padding:8px 20px}
+  #preview{display:none;max-width:100%;max-height:320px;border-radius:14px;margin-top:14px;
+    border:1px solid var(--line)}
+  .prog{height:12px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:14px}
+  .prog i{display:block;height:100%;width:0;border-radius:999px;
+    background:linear-gradient(90deg,var(--teal-d),var(--teal));transition:width .2s}
+  #status{margin:8px 0 0;color:var(--muted);font-size:14.5px;min-height:28px}
+  #outBox{
+    width:100%;min-height:220px;resize:vertical;font-family:inherit;font-size:16px;line-height:2.1;
+    color:var(--txt);background:#070d1a;border:1px solid var(--line);border-radius:14px;padding:16px;
+  }
+  .meta{display:flex;justify-content:space-between;align-items:center;color:var(--muted);
+    font-size:13.5px;margin-top:6px;flex-wrap:wrap;gap:8px}
+  .note{border-radius:14px;padding:12px 16px;margin:12px 0;font-size:14.5px;border:1px solid}
+  .note.info{background:rgba(96,165,250,.1);border-color:rgba(96,165,250,.4)}
+  .note.bad{background:rgba(251,113,133,.12);border-color:rgba(251,113,133,.45);display:none}
+  footer{margin-top:40px;text-align:center;color:var(--muted);font-size:14px}
+  footer a{color:var(--teal)}
+  @media (max-width:640px){ body{font-size:15px} .card{padding:18px} button{width:100%} }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <h1>OCR تحت وب — بدون نصب</h1>
+  <p>عکس را انتخاب کن، متن فارسی و انگلیسی‌اش را همین‌جا تحویل بگیر. روی گوشی و کامپیوتر کار می‌کند.</p>
+</header>
+
+<div class="wrap">
+
+  <div class="card">
+    <h2>قدم ۱: انتخاب تصویر</h2>
+    <label class="drop" id="dropZone">
+      <b>برای انتخاب عکس لمس کن / کلیک کن</b>
+      <small>یا فایل را همین‌جا رها کن — PNG و JPG و WEBP</small>
+      <input type="file" id="fileInput" accept="image/png,image/jpeg,image/webp,image/bmp">
+    </label>
+    <img id="preview" alt="پیش‌نمایش تصویر انتخاب‌شده">
+    <div class="row">
+      <label for="langSel">زبان:</label>
+      <select id="langSel">
+        <option value="fas+eng" selected>فارسی + انگلیسی</option>
+        <option value="fas">فقط فارسی</option>
+        <option value="eng">فقط انگلیسی</option>
+      </select>
+      <button id="startBtn">استخراج متن</button>
+    </div>
+    <div class="prog"><i id="progBar"></i></div>
+    <p id="status">هنوز عکسی انتخاب نشده است.</p>
+    <div class="note bad" id="errBox"></div>
+  </div>
+
+  <div class="card">
+    <h2>قدم ۲: تحویل متن</h2>
+    <textarea id="outBox" readonly placeholder="متن استخراج‌شده اینجا نمایش داده می‌شود…"></textarea>
+    <div class="meta">
+      <span id="charCount">۰ کاراکتر</span>
+      <span>
+        <button class="ghost" id="copyBtn">کپی متن</button>
+        <button class="ghost" id="dlBtn">دانلود TXT</button>
+      </span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="note info" style="margin:0">
+      <b>دو نکته مهم</b>
+      دفعه اول به اینترنت نیاز است تا موتور و داده زبان دانلود شود (بعدش از حافظه مرورگر استفاده می‌شود).
+      عکس تو هیچ‌جا آپلود نمی‌شود؛ پردازش کاملاً داخل همین دستگاه انجام می‌شود.
+      برای PDF، عکس اسکن‌شده یا فایل صوتی از نسخه کامپیوتر (CLI) استفاده کن.
+    </div>
+  </div>
+
+  <footer>
+    بخشی از پروژه <a href="https://github.com/Alvandcode/ocr-stt-tool">OCR-STT Tool</a>
+    · <a href="tutorial.html">صفحه آموزش قدم‌به‌قدم</a>
+  </footer>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var fileInput = document.getElementById("fileInput");
+  var dropZone = document.getElementById("dropZone");
+  var preview = document.getElementById("preview");
+  var langSel = document.getElementById("langSel");
+  var startBtn = document.getElementById("startBtn");
+  var progBar = document.getElementById("progBar");
+  var statusEl = document.getElementById("status");
+  var errBox = document.getElementById("errBox");
+  var outBox = document.getElementById("outBox");
+  var copyBtn = document.getElementById("copyBtn");
+  var dlBtn = document.getElementById("dlBtn");
+  var charCount = document.getElementById("charCount");
+
+  var currentFile = null;
+  var running = false;
+
+  var FA_DIGITS = ["۰","۱","۲","۳","۴","۵","۶","۷","۸","۹"];
+  function faNum(n){
+    return String(n).replace(/[0-9]/g, function(d){ return FA_DIGITS[+d]; });
+  }
+  function setStatus(t){ statusEl.textContent = t; }
+  function showError(t){
+    errBox.style.display = "block";
+    errBox.innerHTML = "<b>خطا</b>" + t;
+  }
+  function hideError(){ errBox.style.display = "none"; errBox.innerHTML = ""; }
+  function setProgress(p){ progBar.style.width = Math.round(p * 100) + "%"; }
+
+  function pickFile(f){
+    hideError();
+    if(!f) return;
+    if(!f.type || f.type.indexOf("image/") !== 0){
+      showError("فایل انتخاب‌شده عکس نیست. یک فایل PNG یا JPG انتخاب کن.");
+      return;
+    }
+    if(f.size > 15 * 1024 * 1024){
+      showError("عکس بزرگ‌تر از ۱۵ مگابایت است؛ اول حجمش را کم کن.");
+      return;
+    }
+    currentFile = f;
+    var url = URL.createObjectURL(f);
+    preview.src = url;
+    preview.style.display = "block";
+    preview.onload = function(){ URL.revokeObjectURL(url); };
+    outBox.value = "";
+    charCount.textContent = "۰ کاراکتر";
+    setProgress(0);
+    setStatus("آماده است — دکمه «استخراج متن» را بزن.");
+  }
+
+  fileInput.addEventListener("change", function(){ pickFile(fileInput.files[0]); });
+  ["dragover","dragenter"].forEach(function(ev){
+    dropZone.addEventListener(ev, function(e){ e.preventDefault(); dropZone.classList.add("over"); });
+  });
+  ["dragleave","drop"].forEach(function(ev){
+    dropZone.addEventListener(ev, function(e){ e.preventDefault(); dropZone.classList.remove("over"); });
+  });
+  dropZone.addEventListener("drop", function(e){
+    var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    pickFile(f);
+  });
+
+  var STATUS_FA = {
+    "loading tesseract core": "در حال بارگذاری موتور…",
+    "initializing tesseract": "در حال آماده‌سازی موتور…",
+    "loading language traineddata": "در حال دانلود داده زبان (فقط دفعه اول)…",
+    "initializing api": "در حال راه‌اندازی…",
+    "recognizing text": "در حال خواندن متن عکس…"
+  };
+
+  startBtn.addEventListener("click", function(){
+    if(running) return;
+    hideError();
+    if(!currentFile){
+      showError("اول یک عکس انتخاب کن.");
+      return;
+    }
+    if(typeof Tesseract === "undefined"){
+      showError("کتابخانه موتور بارگذاری نشد. اینترنت را چک کن و صفحه را رفرش کن.");
+      return;
+    }
+    running = true;
+    startBtn.disabled = true;
+    outBox.value = "";
+    setProgress(0);
+
+    var langs = langSel.value.split("+");
+    var worker = null;
+
+    Tesseract.createWorker(langs, Tesseract.OEM.LSTM, {
+      langPath: "https://tessdata.projectnaptha.com/4.0.0",
+      logger: function(m){
+        if(m.status === "recognizing text"){
+          setProgress(m.progress || 0);
+          setStatus("در حال خواندن متن عکس… " + faNum(Math.round((m.progress || 0) * 100)) + "٪");
+        } else if(STATUS_FA[m.status]){
+          setStatus(STATUS_FA[m.status]);
+        }
+      }
+    }).then(function(w){
+      worker = w;
+      return worker.recognize(currentFile);
+    }).then(function(result){
+      var text = (result && result.data && result.data.text ? result.data.text : "").trim();
+      outBox.value = text || "(متنی در عکس پیدا نشد)";
+      charCount.textContent = faNum(text.length) + " کاراکتر";
+      setProgress(1);
+      setStatus("تمام شد ✓");
+    }).catch(function(err){
+      var msg = (err && err.message) ? err.message : String(err);
+      if(msg.indexOf("traineddata") !== -1 || msg.indexOf("language") !== -1){
+        showError("دانلود داده زبان ناموفق بود. اینترنت را چک کن و یک‌بار با گزینه «فقط انگلیسی» امتحان کن.");
+      } else {
+        showError("استخراج ناموفق بود (" + msg + "). عکس دیگری را امتحان کن.");
+      }
+      setStatus("ناموفق بود.");
+    }).then(function(){
+      if(worker){ return worker.terminate().catch(function(){}); }
+    }).then(function(){
+      running = false;
+      startBtn.disabled = false;
+    });
+  });
+
+  copyBtn.addEventListener("click", function(){
+    var t = outBox.value;
+    if(!t){ return; }
+    function done(){ copyBtn.textContent = "کپی شد ✓"; setTimeout(function(){ copyBtn.textContent = "کپی متن"; }, 1500); }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(t).then(done).catch(function(){ legacy(); });
+    } else { legacy(); }
+    function legacy(){
+      outBox.removeAttribute("readonly");
+      outBox.select();
+      try { document.execCommand("copy"); } catch(e){}
+      outBox.setAttribute("readonly", "readonly");
+      done();
+    }
+  });
+
+  dlBtn.addEventListener("click", function(){
+    var t = outBox.value;
+    if(!t){ return; }
+    var blob = new Blob(["\ufeff" + t], {type: "text/plain;charset=utf-8"});
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "ocr-result.txt";
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  });
+})();
+</script>
+</body>
+</html>

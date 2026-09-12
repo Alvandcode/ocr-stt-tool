@@ -13,6 +13,9 @@ pydub==0.25.1  # optional: audio conversion helper
 #   sudo apt install poppler-utils tesseract-ocr tesseract-ocr-fas
 pdf2image==1.17.0  # optional: scanned-PDF OCR fallback (--ocr-fallback)
 
-# Offline speech-to-text alternatives (no Google API, no internet):
-# faster-whisper==1.0.3  # optional offline STT
-# vosk==0.3.45           # optional offline STT
+# Offline speech-to-text (no Google API, no internet; ~1-3 GB model download
+# on first run depending on --whisper-model):
+faster-whisper==1.0.3  # optional: --engine whisper
+
+# Better Persian normalization (otherwise a stdlib fallback is used):
+hazm==0.10.0  # optional: improves --normalize-fa

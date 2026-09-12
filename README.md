@@ -63,9 +63,12 @@ ocr-stt-tool/
 ├─ app/
 │  ├─ core/
 │  │  ├─ __init__.py
+│  │  ├─ models.py
 │  │  ├─ image_ocr.py
 │  │  ├─ pdf_ocr.py
-│  │  └─ speech_to_text.py
+│  │  ├─ speech_to_text.py
+│  │  ├─ whisper_stt.py
+│  │  └─ fa_normalize.py
 │  ├─ __init__.py
 │  ├─ __main__.py
 │  ├─ cli.py
@@ -75,11 +78,15 @@ ocr-stt-tool/
 │  ├─ sample.pdf
 │  └─ sample.wav
 ├─ tests/
-│  └─ test_smoke.py
+│  ├─ test_smoke.py
+│  └─ test_golden.py
 ├─ requirements.txt
+├─ requirements-gui.txt
 ├─ requirements-optional.txt
 ├─ pyproject.toml
 ├─ buildozer.spec
+├─ Dockerfile
+├─ CHANGELOG.md
 ├─ README.md
 └─ LICENSE
 ```
@@ -88,16 +95,23 @@ ocr-stt-tool/
 
 🔧 نصب و راه‌اندازی
 
-1) نصب وابستگی‌ها
+1) نصب وابستگی‌ها (CLI و هسته — بدون GUI)
 
 ```bash
 pip install -r requirements.txt
 ```
 
-موارد اختیاری (میکروفون، تبدیل MP3، OCR اسکن-PDF، STT آفلاین):
+GUI دسکتاپ (Kivy):
+
+```bash
+pip install -r requirements-gui.txt
+```
+
+موارد اختیاری (میکروفون، تبدیل MP3، OCR اسکن-PDF، STT آفلاین، نرمالایز فارسی):
 
 ```bash
 pip install -r requirements-optional.txt
+# یا انتخابی: pip install "ocr-stt-tool[offline,fa]"
 ```
 
 2) نصب Tesseract OCR
@@ -139,17 +153,50 @@ python -m app.cli audio examples/sample.wav --lang fa-IR
 python -m app.cli audio speech.wav --lang en-US -o out.txt
 ```
 
+آفلاین (بدون اینترنت، نیازمند `pip install faster-whisper`):
+
+```bash
+python -m app.cli audio speech.wav --engine whisper --whisper-model small --lang fa-IR
+```
+
+فرمت خروجی و نرمالایز فارسی:
+
+```bash
+python -m app.cli pdf examples/sample.pdf --format json -o res.json
+python -m app.cli audio speech.wav --engine whisper --format srt -o subs.srt
+python -m app.cli audio speech.wav --normalize-fa -o clean.txt
+```
+
+`--format srt` فقط برای صوت است؛ خروجی `json` شامل موتور، زبان، تعداد صفحات، هشدارها و زمان اجراست.
+`--normalize-fa` از hazm (اگر نصب باشد) وگرنه جایگزین داخلی استفاده می‌کند.
+
 اجرای GUI
 
 ```bash
 python -m app.gui_kivy
 ```
 
-در GUI زبان STT و OCR از منوی کشویی انتخاب می‌شود، کار سنگین در Thread پس‌زمینه اجرا می‌شود (UI فریز نمی‌شود) و خطاها داخل خود برنامه نمایش داده می‌شوند.
+در GUI زبان STT و OCR و موتور (google/whisper) از منوی کشویی انتخاب می‌شود،
+گزینهٔ Normalize FA نرمال‌سازی فارسی را فعال می‌کند، کار سنگین در Thread پس‌زمینه
+اجرا می‌شود (UI فریز نمی‌شود) و خطاها داخل خود برنامه نمایش داده می‌شوند.
 
 ---
 
-📱 راهنمای بیلد برای موبایل (Android / iOS)
+🐳 اجرا با Docker (بدون نصب Tesseract و poppler روی سیستم)
+
+```bash
+docker build -t ocrstt:1.2.0 .
+docker run --rm -v "$PWD/examples:/data" ocrstt:1.2.0 pdf /data/sample.pdf
+docker run --rm -v "$PWD:/work" ocrstt:1.2.0 audio /work/speech.wav --lang fa-IR --format json
+```
+
+ایمیج شامل `tesseract-ocr-fas`، `poppler-utils` و `ffmpeg` است (پایتون 3.12-slim).
+
+---
+
+📱 وضعیت موبایل (Android / iOS) — آزمایشی
+
+هدف اصلی پروژه **دسکتاپ و سرور** است. بیلد موبایل نگه داشته شده ولی آزمایشی محسوب می‌شود:
 
 > محدودیت مهم: `pytesseract` فقط Wrapper است و به باینری `tesseract` نیاز دارد.
 > `python-for-android` و `kivy-ios` به‌صورت پیش‌فرض `tesseract` ندارند، پس OCR عکس

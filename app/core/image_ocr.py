@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 import os
+import time
 
 import pytesseract
 from PIL import Image, UnidentifiedImageError
 from pytesseract import TesseractError, TesseractNotFoundError
+
+from .models import ExtractResult
 
 # Refuse absurdly large images early (Pillow DecompressionBomb protection
 # is still active, this is just a clearer error message).
@@ -14,7 +17,7 @@ MAX_IMAGE_BYTES = 30 * 1024 * 1024
 SUPPORTED_EXTENSIONS = {".png", ".jpg", ".jpeg", ".tif", ".tiff", ".bmp", ".webp"}
 
 
-def image_to_text(image_path: str, lang: str = "fas+eng") -> str:
+def image_to_text(image_path: str, lang: str = "fas+eng") -> ExtractResult:
     """Extract text from an image file.
 
     Args:
@@ -24,12 +27,12 @@ def image_to_text(image_path: str, lang: str = "fas+eng") -> str:
             (``tesseract-ocr-fas`` on Linux).
 
     Returns:
-        Extracted text, stripped of leading/trailing whitespace.
+        :class:`ExtractResult` with ``engine="tesseract"``.
 
     Raises:
         FileNotFoundError: If the path does not exist or is not a file.
         ValueError: If the file is empty, has an unsupported extension,
-            or no text could be decoded.
+            or is not a readable image.
         RuntimeError: If the Tesseract binary is missing or fails.
     """
     if not os.path.isfile(image_path):
@@ -51,6 +54,7 @@ def image_to_text(image_path: str, lang: str = "fas+eng") -> str:
             f"Supported: {sorted(SUPPORTED_EXTENSIONS)}"
         )
 
+    started = time.perf_counter()
     try:
         with Image.open(image_path) as img:
             img.load()  # force decoding while file handle is open
@@ -78,4 +82,10 @@ def image_to_text(image_path: str, lang: str = "fas+eng") -> str:
     except OSError as exc:
         raise ValueError(f"Could not read image '{image_path}': {exc}") from exc
 
-    return (text or "").strip()
+    return ExtractResult(
+        text=(text or "").strip(),
+        engine="tesseract",
+        source=image_path,
+        lang=lang,
+        elapsed_sec=time.perf_counter() - started,
+    )

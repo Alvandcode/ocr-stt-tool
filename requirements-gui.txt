@@ -1,0 +1,2 @@
+# Kivy desktop GUI only. CLI works without this file.
+kivy==2.3.0

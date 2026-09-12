@@ -4,22 +4,24 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ocr-stt-tool"
-version = "1.1.0"
+version = "1.2.0"
 description = "Cross-platform OCR, PDF text extractor and speech-to-text tool (CLI + Kivy GUI)"
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.10"
 authors = [{ name = "Alvandcode" }]
-keywords = ["ocr", "pdf", "speech-to-text", "tesseract", "kivy"]
+keywords = ["ocr", "pdf", "speech-to-text", "tesseract", "kivy", "whisper"]
 dependencies = [
   "pytesseract==0.3.13",
   "Pillow==10.4.0",
   "pdfplumber==0.11.4",
   "SpeechRecognition==3.10.4",
-  "kivy==2.3.0",
 ]
 
 [project.optional-dependencies]
+gui = ["kivy==2.3.0"]
+offline = ["faster-whisper==1.0.3"]
+fa = ["hazm==0.10.0"]
 audio-mic = ["PyAudio==0.2.14"]
 audio-convert = ["pydub==0.25.1"]
 pdf-ocr = ["pdf2image==1.17.0"]

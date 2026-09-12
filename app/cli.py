@@ -22,7 +22,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--lang",
         default="fa-IR",
         help="BCP-47 code for speech-to-text (default: fa-IR). "
-        "Examples: fa-IR, en-US.",
+        "Examples: fa-IR, en-US. Mapped to a whisper tag for --engine whisper.",
     )
     parser.add_argument(
         "--ocr-lang",
@@ -30,6 +30,30 @@ def build_parser() -> argparse.ArgumentParser:
         help="Tesseract language(s) for image OCR and PDF OCR fallback "
         "(default: fas+eng). Requires matching traineddata, e.g. "
         "tesseract-ocr-fas for Persian.",
+    )
+    parser.add_argument(
+        "--engine",
+        choices=["google", "whisper"],
+        default="google",
+        help="Audio only: 'google' (online, default) or 'whisper' "
+        "(offline via faster-whisper).",
+    )
+    parser.add_argument(
+        "--whisper-model",
+        default="small",
+        help="Whisper engine only: tiny, base, small (default), medium, large-v3.",
+    )
+    parser.add_argument(
+        "--format",
+        choices=["txt", "json", "srt"],
+        default="txt",
+        help="Output format (default: txt). 'srt' is audio-only.",
+    )
+    parser.add_argument(
+        "--normalize-fa",
+        action="store_true",
+        help="Normalize Persian characters (Arabic Yeh/Kaf fixes, uses hazm "
+        "if installed, stdlib fallback otherwise).",
     )
     parser.add_argument(
         "--output",
@@ -56,6 +80,9 @@ def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
 
+    if args.format == "srt" and args.mode != "audio":
+        parser.error("--format srt is only supported for audio mode.")
+
     if not os.path.isfile(args.source):
         print(f"Error: file not found: {args.source}", file=sys.stderr)
         return 2
@@ -64,27 +91,32 @@ def main(argv: list[str] | None = None) -> int:
         if args.mode == "image":
             from app.core.image_ocr import image_to_text
 
-            text = image_to_text(args.source, lang=args.ocr_lang)
+            result = image_to_text(args.source, lang=args.ocr_lang)
         elif args.mode == "pdf":
             from app.core.pdf_ocr import pdf_to_text
 
-            text = pdf_to_text(
+            result = pdf_to_text(
                 args.source,
                 max_pages=args.max_pages,
                 ocr_fallback=args.ocr_fallback,
                 ocr_lang=args.ocr_lang,
             )
-            if not text.strip():
-                print(
-                    "Warning: no text layer found. This looks like a scanned/image-only "
-                    "PDF. Re-run with --ocr-fallback (needs tesseract + poppler) "
-                    "or OCR the pages as images.",
-                    file=sys.stderr,
-                )
         else:
             from app.core.speech_to_text import audio_to_text
 
-            text = audio_to_text(args.source, lang=args.lang)
+            if args.engine == "whisper":
+                from app.core.whisper_stt import whisper_to_result
+
+                result = whisper_to_result(
+                    args.source, lang=args.lang, model=args.whisper_model
+                )
+            else:
+                result = audio_to_text(args.source, lang=args.lang)
+
+        if args.normalize_fa:
+            from app.core.fa_normalize import normalize_persian
+
+            result.text = normalize_persian(result.text)
     except FileNotFoundError as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 2
@@ -101,15 +133,29 @@ def main(argv: list[str] | None = None) -> int:
         print("\nInterrupted.", file=sys.stderr)
         return 130
 
+    for warning in result.warnings:
+        print(f"Warning: {warning}", file=sys.stderr)
+
+    if args.format == "json":
+        payload = result.to_json() + "\n"
+    elif args.format == "srt":
+        try:
+            payload = result.to_srt()
+        except ValueError as exc:
+            print(f"Error: {exc}", file=sys.stderr)
+            return 1
+    else:
+        payload = result.text + "\n" if result.text else "(no text found)\n"
+
     if args.output:
         try:
             with open(args.output, "w", encoding="utf-8") as fh:
-                fh.write(text + "\n")
+                fh.write(payload)
         except OSError as exc:
             print(f"Error: cannot write to '{args.output}': {exc}", file=sys.stderr)
             return 1
     else:
-        print(text)
+        print(payload, end="" if payload.endswith("\n") else "\n")
 
     return 0
 

@@ -3,11 +3,18 @@
 from __future__ import annotations
 
 import os
+import time
 
 import pdfplumber
 
+from .models import ExtractResult
+
 MAX_PDF_BYTES = 100 * 1024 * 1024
-PAGE_SEPARATOR = "\n\n--- Page {n} ---\n\n"
+SCANNED_PDF_HINT = (
+    "No text layer found. This looks like a scanned/image-only PDF. "
+    "Re-run with --ocr-fallback (needs tesseract + poppler) "
+    "or OCR the pages as images."
+)
 
 
 def _ocr_page_with_tesseract(page_image, lang: str) -> str:
@@ -22,13 +29,13 @@ def pdf_to_text(
     max_pages: int | None = None,
     ocr_fallback: bool = False,
     ocr_lang: str = "fas+eng",
-) -> str:
+) -> ExtractResult:
     """Extract text from all (or first N) pages of a PDF.
 
     This reads the embedded text layer via pdfplumber. Scanned/image-only
-    PDFs have no text layer -- in that case an empty string section is
-    produced per page unless ``ocr_fallback=True`` (requires
-    ``pdf2image`` + ``pytesseract`` + system ``tesseract`` and ``poppler``).
+    PDFs have no text layer -- in that case an empty result with a warning
+    is returned unless ``ocr_fallback=True`` (requires ``pdf2image`` +
+    ``pytesseract`` + system ``tesseract`` and ``poppler``).
 
     Args:
         pdf_path: Path to a ``.pdf`` file.
@@ -58,13 +65,23 @@ def pdf_to_text(
     if max_pages is not None and (not isinstance(max_pages, int) or max_pages < 1):
         raise ValueError(f"max_pages must be a positive int, got: {max_pages!r}")
 
+    started = time.perf_counter()
     try:
         with pdfplumber.open(pdf_path) as pdf:
             if not pdf.pages:
-                return ""
+                return ExtractResult(
+                    text="",
+                    engine="pdfplumber",
+                    source=pdf_path,
+                    lang="n/a",
+                    pages=0,
+                    elapsed_sec=time.perf_counter() - started,
+                )
             pages = pdf.pages if max_pages is None else pdf.pages[:max_pages]
             chunks: list[str] = []
+            warnings: list[str] = []
             empty_pages = 0
+            fallback_used = False
             for i, page in enumerate(pages, start=1):
                 try:
                     page_text = page.extract_text() or ""
@@ -78,6 +95,7 @@ def pdf_to_text(
                         # 150 DPI is a good speed/accuracy trade-off for fallback.
                         page_image = page.to_image(resolution=150).original
                         page_text = _ocr_page_with_tesseract(page_image, ocr_lang)
+                        fallback_used = True
                     except ImportError as exc:
                         raise RuntimeError(
                             "ocr_fallback=True needs 'pdf2image', 'pytesseract' "
@@ -93,12 +111,30 @@ def pdf_to_text(
                     empty_pages += 1
                 # Keep per-page separation instead of blind concatenation.
                 chunks.append(f"--- Page {i} ---\n{page_text.strip()}")
-            text = "\n\n".join(c for c in chunks if c).strip()
-            if not text.strip() or empty_pages == len(pages):
+            engine = "pdfplumber+tesseract" if fallback_used else "pdfplumber"
+            if empty_pages == len(pages):
                 # All pages empty: almost certainly a scanned PDF without
-                # text layer. Return "" but let callers detect it; CLI warns.
-                return ""
-            return text
+                # a text layer. Return "" but flag it via warnings.
+                warnings.append(SCANNED_PDF_HINT)
+                return ExtractResult(
+                    text="",
+                    engine=engine,
+                    source=pdf_path,
+                    lang="n/a",
+                    warnings=warnings,
+                    pages=len(pages),
+                    elapsed_sec=time.perf_counter() - started,
+                )
+            text = "\n\n".join(c for c in chunks if c).strip()
+            return ExtractResult(
+                text=text,
+                engine=engine,
+                source=pdf_path,
+                lang="n/a",
+                warnings=warnings,
+                pages=len(pages),
+                elapsed_sec=time.perf_counter() - started,
+            )
     except (FileNotFoundError, ValueError, RuntimeError):
         raise
     except Exception as exc:

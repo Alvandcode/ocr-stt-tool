@@ -103,8 +103,8 @@ def audio_to_text(
     if sr is None:
         raise RuntimeError(
             "SpeechRecognition library could not be imported "
-            f"({_SR_IMPORT_ERROR}). On Python 3.15+ the stdlib 'aifc' module "
-            "was removed and SpeechRecognition breaks. Use Python 3.10-3.13, "
+            f"({_SR_IMPORT_ERROR}). On Python 3.13+ the stdlib 'aifc' module "
+            "was removed and SpeechRecognition breaks. Use Python 3.10-3.12, "
             "or switch to --engine whisper (offline, see "
             "requirements-optional.txt)."
         )

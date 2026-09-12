@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.2] - 2026-09-12
+
+### Fixed
+- `pip install` on Python 3.13+: Pillow is now ranged (`>=10.4.0`) so newer
+  wheels are used instead of a failing from-source build. Full features
+  (Google STT, whisper) still require Python 3.10-3.12 — documented in
+  README, tutorial and install errors.
+
 ## [1.2.1] - 2026-09-12
 
 ### Fixed

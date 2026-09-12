@@ -205,7 +205,7 @@ buildozer -v android debug</pre></div></li>
   </div>
   <div class="card">
     <ol class="steps">
-      <li><b>نصب پایتون:</b> از <span dir="ltr">python.org</span> نسخه 3.10 تا 3.13 را دانلود کن و موقع نصب تیک <span dir="ltr">Add python.exe to PATH</span> را حتماً بزن. (پایتون 3.15 با موتور گفتار گوگل ناسازگار است.)</li>
+      <li><b>نصب پایتون 3.12:</b> از <span dir="ltr">python.org</span> نسخه <b>3.12</b> را دانلود کن (نه 3.13 به بالا — موتور گفتار و whisper رویشان نصب نمی‌شوند) و موقع نصب تیک <span dir="ltr">Add python.exe to PATH</span> را حتماً بزن. اگر چند نسخه داری، در ادامه به‌جای <span dir="ltr">pip</span> و <span dir="ltr">python</span> بنویس <span dir="ltr">py -3.12 -m pip</span> و <span dir="ltr">py -3.12 -m app.cli</span>.</li>
       <li><b>نصب تسرکت:</b> نصب‌کننده UB-Mannheim را بگیر و موقع نصب زبان <b>Persian (fas)</b> را هم انتخاب کن. بعد در CMD تست کن:
         <div class="code"><header><span>cmd</span><button class="copy">کپی</button></header><pre>tesseract --version
 tesseract --list-langs</pre></div>
@@ -323,7 +323,7 @@ docker run --rm -v "$PWD:/work" ocrstt:1.2.0 audio /work/speech.wav --lang fa-IR
     <tr><th>نشانه</th><th>علت</th><th>راه‌حل</th></tr>
     <tr><td>Tesseract binary not found</td><td>تسرکت نصب نیست یا در PATH نیست</td><td>بخش نصب سیستم‌عامل خودت را دوباره انجام بده و <span dir="ltr">tesseract --version</span> را تست کن</td></tr>
     <tr><td>خروجی PDF خالی است</td><td>PDF اسکن‌شده و بدون لایه متن است</td><td>با <span dir="ltr">--ocr-fallback</span> اجرا کن (نیازمند poppler + تسرکت)</td></tr>
-    <tr><td>SpeechRecognition / aifc خطا می‌دهد</td><td>پایتون 3.15 با این کتابخانه ناسازگار است</td><td>پایتون 3.10 تا 3.13 نصب کن یا <span dir="ltr">--engine whisper</span> بزن</td></tr>
+    <tr><td>SpeechRecognition / aifc خطا می‌دهد، یا Pillow و faster-whisper نصب نمی‌شوند</td><td>پایتون 3.13+ است؛ این کتابخانه‌ها رویش ویل/ماژول ندارند</td><td>پایتون <b>3.12</b> نصب کن و با <span dir="ltr">py -3.12</span> اجرا کن؛ یا فقط استخراج PDF را با همین نسخه انجام بده</td></tr>
     <tr><td>Unsupported audio extension (mp3…)</td><td>فقط wav/aiff/flac مستقیم خوانده می‌شود</td><td>با ffmpeg تبدیل کن: <span dir="ltr">ffmpeg -i in.mp3 out.wav</span></td></tr>
     <tr><td>سرویس گوگل در دسترس نیست / اینترنت</td><td>قطعی نت، فیلترینگ یا سقف سهمیه</td><td>اتصال را چک کن یا آفلاین با <span dir="ltr">--engine whisper</span> کار کن</td></tr>
     <tr><td>حروف فارسی به‌هم‌ریخته (ي / ك عربی)</td><td>خروجی خام OCR است</td><td>فلگ <span dir="ltr">--normalize-fa</span> را اضافه کن</td></tr>

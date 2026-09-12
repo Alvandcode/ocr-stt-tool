@@ -255,7 +255,7 @@ def test_cli_version_flag(capsys):
     with pytest.raises(SystemExit) as exc:
         main(["--version"])
     assert exc.value.code == 0
-    assert "1.2.1" in capsys.readouterr().out
+    assert "1.2.2" in capsys.readouterr().out
 
 
 def test_cli_mode_specific_flags_rejected():

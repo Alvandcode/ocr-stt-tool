@@ -1,5 +1,9 @@
 # Pinned for reproducible installs (CLI + core: no GUI, no heavy ML).
+# Supported Python: 3.10-3.12 for ALL features. Pillow is intentionally
+# ranged (>=) so `pip install` still succeeds on newer Pythons (3.13+),
+# where only PDF text extraction works -- SpeechRecognition needs the
+# removed stdlib `aifc`, and faster-whisper has no `av` wheels there.
 pytesseract==0.3.13
-Pillow==10.4.0
+Pillow>=10.4.0
 pdfplumber==0.11.4
 SpeechRecognition==3.10.4

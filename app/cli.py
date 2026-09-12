@@ -89,7 +89,7 @@ def _app_version() -> str:
 
         return version("ocr-stt-tool")
     except Exception:  # noqa: BLE001 - not installed (running from source)
-        return "1.2.1"
+        return "1.2.2"
 
 
 def main(argv: list[str] | None = None) -> int:

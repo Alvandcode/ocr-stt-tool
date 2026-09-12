@@ -34,6 +34,8 @@
   responsive, offline single-file) linked from README via a tutorial button.
 - Browser-based OCR `docs/web-ocr.html` (Tesseract.js, Persian+English,
   single file, responsive) for non-technical users + README buttons.
+- Web tool now also supports PDF (pdf.js page rendering + per-page OCR,
+  first 10 pages, fully client-side).
 
 ## [1.2.0] - 2026-09-12
 

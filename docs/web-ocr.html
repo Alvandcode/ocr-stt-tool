@@ -3,12 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>OCR تحت وب | استخراج متن از عکس بدون نصب</title>
-<meta name="description" content="ابزار تحت وب استخراج متن از عکس (فارسی و انگلیسی) — بدون نصب، داخل مرورگر گوشی و کامپیوتر">
+<title>OCR تحت وب | استخراج متن از عکس و PDF بدون نصب</title>
+<meta name="description" content="ابزار تحت وب استخراج متن از عکس و PDF (فارسی و انگلیسی) — بدون نصب، داخل مرورگر گوشی و کامپیوتر">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;700;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
 <style>
   :root{
     --bg:#0b1220; --bg2:#0f1a30; --card:#14213d; --card2:#1a2a4d;
@@ -59,6 +60,7 @@
     font-size:14px;padding:8px 20px}
   #preview{display:none;max-width:100%;max-height:320px;border-radius:14px;margin-top:14px;
     border:1px solid var(--line)}
+  #fileInfo{display:none;margin-top:10px;font-size:14.5px;color:var(--muted)}
   .prog{height:12px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:14px}
   .prog i{display:block;height:100%;width:0;border-radius:999px;
     background:linear-gradient(90deg,var(--teal-d),var(--teal));transition:width .2s}
@@ -81,19 +83,20 @@
 
 <header class="hero">
   <h1>OCR تحت وب — بدون نصب</h1>
-  <p>عکس را انتخاب کن، متن فارسی و انگلیسی‌اش را همین‌جا تحویل بگیر. روی گوشی و کامپیوتر کار می‌کند.</p>
+  <p>عکس یا PDF را انتخاب کن، متن فارسی و انگلیسی‌اش را همین‌جا تحویل بگیر. روی گوشی و کامپیوتر کار می‌کند.</p>
 </header>
 
 <div class="wrap">
 
   <div class="card">
-    <h2>قدم ۱: انتخاب تصویر</h2>
+    <h2>قدم ۱: انتخاب فایل</h2>
     <label class="drop" id="dropZone">
-      <b>برای انتخاب عکس لمس کن / کلیک کن</b>
-      <small>یا فایل را همین‌جا رها کن — PNG و JPG و WEBP</small>
-      <input type="file" id="fileInput" accept="image/png,image/jpeg,image/webp,image/bmp">
+      <b>برای انتخاب فایل لمس کن / کلیک کن</b>
+      <small>یا فایل را همین‌جا رها کن — عکس (PNG و JPG و WEBP) یا PDF</small>
+      <input type="file" id="fileInput" accept="image/png,image/jpeg,image/webp,image/bmp,application/pdf">
     </label>
     <img id="preview" alt="پیش‌نمایش تصویر انتخاب‌شده">
+    <div id="fileInfo"></div>
     <div class="row">
       <label for="langSel">زبان:</label>
       <select id="langSel">
@@ -104,7 +107,7 @@
       <button id="startBtn">استخراج متن</button>
     </div>
     <div class="prog"><i id="progBar"></i></div>
-    <p id="status">هنوز عکسی انتخاب نشده است.</p>
+    <p id="status">هنوز فایلی انتخاب نشده است.</p>
     <div class="note bad" id="errBox"></div>
   </div>
 
@@ -122,10 +125,10 @@
 
   <div class="card">
     <div class="note info" style="margin:0">
-      <b>دو نکته مهم</b>
+      <b>سه نکته مهم</b>
       دفعه اول به اینترنت نیاز است تا موتور و داده زبان دانلود شود (بعدش از حافظه مرورگر استفاده می‌شود).
-      عکس تو هیچ‌جا آپلود نمی‌شود؛ پردازش کاملاً داخل همین دستگاه انجام می‌شود.
-      برای PDF، عکس اسکن‌شده یا فایل صوتی از نسخه کامپیوتر (CLI) استفاده کن.
+      فایل تو هیچ‌جا آپلود نمی‌شود؛ پردازش کاملاً داخل همین دستگاه انجام می‌شود.
+      از PDF حداکثر ۱۰ صفحه اول خوانده می‌شود؛ برای PDF حجیم یا فایل صوتی از نسخه کامپیوتر (CLI) استفاده کن.
     </div>
   </div>
 
@@ -139,9 +142,17 @@
 <script>
 (function(){
   "use strict";
+  var PDF_WORKER_URL = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
+  var PDF_LANG_PATH = "https://tessdata.projectnaptha.com/4.0.0";
+  var MAX_IMAGE_BYTES = 15 * 1024 * 1024;
+  var MAX_PDF_BYTES = 25 * 1024 * 1024;
+  var MAX_PDF_PAGES = 10;
+  var PDF_RENDER_SCALE = 2.0;
+
   var fileInput = document.getElementById("fileInput");
   var dropZone = document.getElementById("dropZone");
   var preview = document.getElementById("preview");
+  var fileInfo = document.getElementById("fileInfo");
   var langSel = document.getElementById("langSel");
   var startBtn = document.getElementById("startBtn");
   var progBar = document.getElementById("progBar");
@@ -153,6 +164,7 @@
   var charCount = document.getElementById("charCount");
 
   var currentFile = null;
+  var currentKind = null; // "image" | "pdf"
   var running = false;
 
   var FA_DIGITS = ["۰","۱","۲","۳","۴","۵","۶","۷","۸","۹"];
@@ -166,23 +178,45 @@
   }
   function hideError(){ errBox.style.display = "none"; errBox.innerHTML = ""; }
   function setProgress(p){ progBar.style.width = Math.round(p * 100) + "%"; }
+  function isPdf(f){
+    if(!f) return false;
+    if(f.type === "application/pdf") return true;
+    return /\.pdf$/i.test(f.name || "");
+  }
 
   function pickFile(f){
     hideError();
     if(!f) return;
-    if(!f.type || f.type.indexOf("image/") !== 0){
-      showError("فایل انتخاب‌شده عکس نیست. یک فایل PNG یا JPG انتخاب کن.");
+    var kind = isPdf(f) ? "pdf" : null;
+    if(!kind && f.type && f.type.indexOf("image/") === 0) kind = "image";
+    if(!kind){
+      showError("فایل پشتیبانی نمی‌شود. عکس (PNG/JPG/WEBP) یا PDF انتخاب کن.");
       return;
     }
-    if(f.size > 15 * 1024 * 1024){
-      showError("عکس بزرگ‌تر از ۱۵ مگابایت است؛ اول حجمش را کم کن.");
+    var limit = kind === "pdf" ? MAX_PDF_BYTES : MAX_IMAGE_BYTES;
+    if(f.size > limit){
+      showError(kind === "pdf"
+        ? "PDF بزرگ‌تر از ۲۵ مگابایت است؛ اول حجمش را کم کن یا از نسخه کامپیوتر استفاده کن."
+        : "عکس بزرگ‌تر از ۱۵ مگابایت است؛ اول حجمش را کم کن.");
       return;
     }
     currentFile = f;
-    var url = URL.createObjectURL(f);
-    preview.src = url;
-    preview.style.display = "block";
-    preview.onload = function(){ URL.revokeObjectURL(url); };
+    currentKind = kind;
+    if(kind === "image"){
+      var url = URL.createObjectURL(f);
+      preview.src = url;
+      preview.style.display = "block";
+      preview.onload = function(){ URL.revokeObjectURL(url); };
+      fileInfo.style.display = "none";
+      fileInfo.textContent = "";
+    } else {
+      preview.style.display = "none";
+      preview.removeAttribute("src");
+      fileInfo.style.display = "block";
+      fileInfo.textContent = "PDF انتخاب شد: " + (f.name || "بدون نام") +
+        " (" + faNum(Math.round(f.size / 1024)) + " کیلوبایت) — حداکثر " +
+        faNum(MAX_PDF_PAGES) + " صفحه اول خوانده می‌شود.";
+    }
     outBox.value = "";
     charCount.textContent = "۰ کاراکتر";
     setProgress(0);
@@ -206,18 +240,31 @@
     "initializing tesseract": "در حال آماده‌سازی موتور…",
     "loading language traineddata": "در حال دانلود داده زبان (فقط دفعه اول)…",
     "initializing api": "در حال راه‌اندازی…",
-    "recognizing text": "در حال خواندن متن عکس…"
+    "recognizing text": "در حال خواندن متن…"
   };
+
+  function readAsArrayBuffer(file){
+    return new Promise(function(resolve, reject){
+      var r = new FileReader();
+      r.onload = function(){ resolve(r.result); };
+      r.onerror = function(){ reject(new Error("read-failed")); };
+      r.readAsArrayBuffer(file);
+    });
+  }
 
   startBtn.addEventListener("click", function(){
     if(running) return;
     hideError();
     if(!currentFile){
-      showError("اول یک عکس انتخاب کن.");
+      showError("اول یک فایل انتخاب کن.");
       return;
     }
     if(typeof Tesseract === "undefined"){
       showError("کتابخانه موتور بارگذاری نشد. اینترنت را چک کن و صفحه را رفرش کن.");
+      return;
+    }
+    if(currentKind === "pdf" && typeof pdfjsLib === "undefined"){
+      showError("کتابخانه PDF بارگذاری نشد. اینترنت را چک کن و صفحه را رفرش کن.");
       return;
     }
     running = true;
@@ -228,39 +275,110 @@
     var langs = langSel.value.split("+");
     var worker = null;
 
-    Tesseract.createWorker(langs, Tesseract.OEM.LSTM, {
-      langPath: "https://tessdata.projectnaptha.com/4.0.0",
-      logger: function(m){
-        if(m.status === "recognizing text"){
-          setProgress(m.progress || 0);
-          setStatus("در حال خواندن متن عکس… " + faNum(Math.round((m.progress || 0) * 100)) + "٪");
-        } else if(STATUS_FA[m.status]){
-          setStatus(STATUS_FA[m.status]);
+    function newWorker(onP){
+      return Tesseract.createWorker(langs, Tesseract.OEM.LSTM, {
+        langPath: PDF_LANG_PATH,
+        logger: function(m){
+          if(m.status === "recognizing text"){
+            onP(m.progress || 0);
+          } else if(STATUS_FA[m.status]){
+            setStatus(STATUS_FA[m.status]);
+          }
         }
-      }
-    }).then(function(w){
-      worker = w;
-      return worker.recognize(currentFile);
-    }).then(function(result){
-      var text = (result && result.data && result.data.text ? result.data.text : "").trim();
-      outBox.value = text || "(متنی در عکس پیدا نشد)";
-      charCount.textContent = faNum(text.length) + " کاراکتر";
+      });
+    }
+
+    function finishOk(text){
+      outBox.value = text || "(متنی پیدا نشد)";
+      charCount.textContent = faNum((text || "").length) + " کاراکتر";
       setProgress(1);
       setStatus("تمام شد ✓");
+    }
+    function finishErr(msg){ showError(msg); setStatus("ناموفق بود."); }
+    function cleanup(done){
+      var p = worker ? worker.terminate().catch(function(){}) : Promise.resolve();
+      p.then(function(){ running = false; startBtn.disabled = false; done(); });
+    }
+
+    if(currentKind === "image"){
+      setStatus("در حال خواندن متن عکس…");
+      newWorker(function(p){
+        setProgress(p);
+        setStatus("در حال خواندن متن عکس… " + faNum(Math.round(p * 100)) + "٪");
+      }).then(function(w){
+        worker = w;
+        return worker.recognize(currentFile);
+      }).then(function(result){
+        var text = (result && result.data && result.data.text ? result.data.text : "").trim();
+        cleanup(function(){ finishOk(text); });
+      }).catch(function(err){
+        var msg = (err && err.message) ? err.message : String(err);
+        cleanup(function(){ finishErr(langErr(msg)); });
+      });
+      return;
+    }
+
+    // ---- PDF: render pages, OCR each one ----
+    setStatus("در حال باز کردن PDF…");
+    readAsArrayBuffer(currentFile).then(function(buf){
+      if(typeof pdfjsLib !== "undefined" && pdfjsLib.GlobalWorkerOptions){
+        pdfjsLib.GlobalWorkerOptions.workerSrc = PDF_WORKER_URL;
+      }
+      return pdfjsLib.getDocument({data: buf}).promise;
+    }).then(function(pdf){
+      var total = Math.min(pdf.numPages, MAX_PDF_PAGES);
+      var skipped = pdf.numPages - total;
+      setStatus("PDF با " + faNum(pdf.numPages) + " صفحه باز شد — خواندن " +
+        faNum(total) + " صفحه اول…");
+      return newWorker(function(){ /* per-page progress below */ }).then(function(w){
+        worker = w;
+        var parts = [];
+        var chain = Promise.resolve();
+        for(var i = 1; i <= total; i++){
+          (function(pageNum){
+            chain = chain.then(function(){
+              setStatus("خواندن صفحه " + faNum(pageNum) + " از " + faNum(total) + "…");
+              return pdf.getPage(pageNum).then(function(page){
+                var viewport = page.getViewport({scale: PDF_RENDER_SCALE});
+                var canvas = document.createElement("canvas");
+                canvas.width = Math.floor(viewport.width);
+                canvas.height = Math.floor(viewport.height);
+                var ctx = canvas.getContext("2d", {willReadFrequently: true});
+                return page.render({canvasContext: ctx, viewport: viewport}).promise.then(function(){
+                  return worker.recognize(canvas);
+                }).then(function(result){
+                  var t = (result && result.data && result.data.text ? result.data.text : "").trim();
+                  parts.push("--- صفحه " + faNum(pageNum) + " ---\n" + t);
+                  setProgress((pageNum - 1) / total + (1 / total) * 0.999);
+                });
+              });
+            });
+          })(i);
+        }
+        return chain.then(function(){
+          var text = parts.join("\n\n").trim();
+          if(skipped > 0){
+            text += "\n\n(فقط " + faNum(total) + " صفحه اول خوانده شد — برای بقیه از نسخه کامپیوتر استفاده کن.)";
+          }
+          try { pdf.destroy(); } catch(e){}
+          cleanup(function(){ finishOk(text); });
+        });
+      });
     }).catch(function(err){
       var msg = (err && err.message) ? err.message : String(err);
-      if(msg.indexOf("traineddata") !== -1 || msg.indexOf("language") !== -1){
-        showError("دانلود داده زبان ناموفق بود. اینترنت را چک کن و یک‌بار با گزینه «فقط انگلیسی» امتحان کن.");
+      if(msg === "read-failed" || (msg && msg.indexOf("InvalidPDF") !== -1) || (msg && msg.indexOf("password") !== -1)){
+        cleanup(function(){ finishErr("PDF خراب یا رمزدار است و باز نشد."); });
       } else {
-        showError("استخراج ناموفق بود (" + msg + "). عکس دیگری را امتحان کن.");
+        cleanup(function(){ finishErr(langErr(msg)); });
       }
-      setStatus("ناموفق بود.");
-    }).then(function(){
-      if(worker){ return worker.terminate().catch(function(){}); }
-    }).then(function(){
-      running = false;
-      startBtn.disabled = false;
     });
+
+    function langErr(msg){
+      if(msg.indexOf("traineddata") !== -1 || msg.indexOf("language") !== -1){
+        return "دانلود داده زبان ناموفق بود. اینترنت را چک کن و یک‌بار با گزینه «فقط انگلیسی» امتحان کن.";
+      }
+      return "استخراج ناموفق بود (" + msg + "). فایل دیگری را امتحان کن.";
+    }
   });
 
   copyBtn.addEventListener("click", function(){
